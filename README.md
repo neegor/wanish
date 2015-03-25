@@ -10,6 +10,7 @@ Besides of that the package extracts the following from the document:
 * URL of the image characterizing this article
 * Strips the document of excessive information (headers, footers, navigation, advertisement, etc.) and forms a clean HTML based on structured data of schema.org
 
+[DEMO](reefeed.com)
 
 ## Installation
 
