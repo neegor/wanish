@@ -1,6 +1,6 @@
 
 
-##About
+## About
 
 This package allows you to summarize text by reducing an article in size to several sentences retaining the idea of the text.
 
@@ -11,7 +11,7 @@ Besides of that the package extracts the following from the document:
  - Strips the document of excessive information (headers, footers, navigation, advertisement, etc.) and forms a clean HTML based on structured data of schema.org
 
 
-##Installation
+## Installation
 
 ```
 easy_install wanish
@@ -19,7 +19,7 @@ or
 pip install wanish
 ```
 
-Usage::
+## Usage
 
 ```python
 from wanish import Wanish
