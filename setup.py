@@ -17,7 +17,7 @@ setup(
     author="Igor Gorschal",
     author_email="gorschal@gmail.com",
     description="open source implementation of summly",
-    long_description=open("README").read(),
+    long_description=open("README.md").read(),
     license="Apache License 2.0",
     url="https://github.com/reefeed/wanish",
     packages=['wanish'],
