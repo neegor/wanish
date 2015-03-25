@@ -64,4 +64,3 @@ local_settings.py
 .idea
 .venv
 .vagrant
-.pypirc
