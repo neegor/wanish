@@ -52,3 +52,16 @@ docs/_build/
 
 # PyBuilder
 target/
+
+.project
+.pydevproject
+.directory
+.settings
+*.pyc
+*.db
+*.sqlite3
+local_settings.py
+.idea
+.venv
+.vagrant
+.pypirc
