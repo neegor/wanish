@@ -54,13 +54,12 @@ wanish = Wanish(url=document_url,
                 summary_sentences_qty=5)
 ```
 
-* url: Allows to pass an url of a document in constructor. If set, then it will automatically launch self.perform_url(url) after initialization.
-* positive_keywords: A list of positive search patterns in classes and ids, for example: ["main", "story"]
-* negative_keywords: A list of negative search patterns in classes and ids, for example: ["banner", "adv", "similar", "top-ad"]
-* summary_sentences_qty: Maximum quantity of sentences in summarized text of the document. Set to 5 by default.
+ - *url:* Allows to pass an url of a document in constructor. If set, then it will automatically launch self.perform_url(url) after initialization.
+ - *positive_keywords:* A list of positive search patterns in classes and ids, for example: ["main", "story"]
+ - *negative_keywords:* A list of negative search patterns in classes and ids, for example: ["banner", "adv", "similar", "top-ad"]
+ - *summary_sentences_qty:* Maximum quantity of sentences in summarized text of the document. Set to 5 by default.
 
 
 ##Based on
 
-
-This code is under the Apache License 2.0.  http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
