@@ -5,10 +5,10 @@
 This package allows you to summarize text by reducing an article in size to several sentences retaining the idea of the text.
 
 Besides of that the package extracts the following from the document:
-* Canonical URL of the article
-* Title of the article
-* URL of the image characterizing this article
-* Strips the document of excessive information (headers, footers, navigation, advertisement, etc.) and forms a clean HTML based on structured data of schema.org
+1. Canonical URL of the article
+2. Title of the article
+3. URL of the image characterizing this article
+4. Strips the document of excessive information (headers, footers, navigation, advertisement, etc.) and forms a clean HTML based on structured data of schema.org
 
 [DEMO](http://reefeed.com)
 
@@ -56,7 +56,7 @@ wanish = Wanish(url=document_url,
 * **summary_sentences_qty:** Maximum quantity of sentences in summarized text of the document. Set to 5 by default.
 
 
-## Based on
+## Special Thanks
 
 * https://github.com/nltk/nltk
 * https://github.com/buriy/python-readability
