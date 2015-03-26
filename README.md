@@ -5,6 +5,7 @@
 This package allows you to summarize text by reducing an article in size to several sentences retaining the idea of the text.
 
 Besides of that the package extracts the following from the document:
+
 1. Canonical URL of the article
 2. Title of the article
 3. URL of the image characterizing this article
