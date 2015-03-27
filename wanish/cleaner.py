@@ -431,15 +431,15 @@ class ArticleExtractor():
 
         self._html = node
 
-        # removing subtrees without text
-        for child in self._html.getroottree().iter("*"):
-            has_text = False
-            for txt in child.itertext():
-                if len(txt.strip(' \t\n')) > 0:
-                    has_text = True
-                    break
-            if not has_text:
-                child.clear()
+        # # removing subtrees without text
+        # for child in self._html.getroottree().iter("*"):
+        #     has_text = False
+        #     for txt in child.itertext():
+        #         if len(txt.strip(' \t\n')) > 0:
+        #             has_text = True
+        #             break
+        #     if not has_text:
+        #         child.clear()
 
         return clean_attributes(etree.tostring(self._html).decode())
 

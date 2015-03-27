@@ -38,11 +38,16 @@ def add_match(collection, text, orig):
 
 
 def shorten_title(doc):
-    title = doc.find('.//title')
-    if title is None or title.text is None or len(title.text) == 0:
-        return ''
 
-    title = orig = norm_title(title.text)
+    head_tag = doc.find('head')
+    meta_titles = head_tag.xpath("//meta[@*='og:title']/@content")
+    if len(meta_titles) > 0:
+        title = orig = norm_title(meta_titles[0])
+    else:
+        title = doc.find('.//title')
+        if title is None or title.text is None or len(title.text) == 0:
+            return ''
+        title = orig = norm_title(title.text)
 
     candidates = set()
 
@@ -63,6 +68,9 @@ def shorten_title(doc):
 
     if candidates:
         title = sorted(candidates, key=len)[-1]
+        print(' * candidates:')
+        for c in sorted(candidates, key=len):
+            print(c)
     else:
         for delimiter in [' | ', ' - ', ' :: ', ' / ']:
             if delimiter in title:

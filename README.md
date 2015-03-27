@@ -42,20 +42,21 @@ clean_html = wanish.clean_html
 description = wanish.description
 ```
 
-Available kwarg options for _Wanish()_ class:
+Available kwarg options for _Wanish()_ class (all are optional):
 
 ```python
 wanish = Wanish(url=document_url,
                 positive_keywords=["main", "story"],
                 negative_keywords=["banner", "adv", "similar", "top-ad"],
-                summary_sentences_qty=5)
+                summary_sentences_qty=5,
+                headers={'user-agent': 'test-purposes/0.0.1'})
 ```
 
-* **url:** Allows to pass an url of a document in constructor. If set, then it will automatically launch _self.perform_url(url)_ after initialization.
-* **positive_keywords:** A list of positive search patterns in classes and ids, for example: _["main", "story"]_
-* **negative_keywords:** A list of negative search patterns in classes and ids, for example: _["banner", "adv", "similar", "top-ad"]_
+* **url:** Allows to pass an url of a document in constructor. If set, then it will automatically launch _self.perform_url(url)_ after initialization. Default is None.
+* **positive_keywords:** A list of positive search patterns in classes and ids, for example: _["main", "story"]_ . Default is None.
+* **negative_keywords:** A list of negative search patterns in classes and ids, for example: _["banner", "adv", "similar", "top-ad"]_ . Default is None.
 * **summary_sentences_qty:** Maximum quantity of sentences in summarized text of the document. Set to 5 by default.
-
+* **headers:** Dict of additional custom headers for GET request to obtain web page of the article. Default is None.
 
 ## Special Thanks
 

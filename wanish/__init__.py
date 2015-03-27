@@ -5,6 +5,7 @@ from lxml.html import document_fromstring
 
 from wanish.cleaner import html_cleaner, ArticleExtractor
 from wanish.encoding import get_encoding
+from wanish.images import get_image_url
 from wanish.title import shorten_title
 
 
@@ -43,13 +44,15 @@ ARTICLE_TEMPLATE = """<!DOCTYPE html>
 
 class Wanish():
 
-    def __init__(self, url=None, positive_keywords=None, negative_keywords=None, summary_sentences_qty=5):
+    def __init__(self, url=None, positive_keywords=None, negative_keywords=None, summary_sentences_qty=5, headers=None):
         """
         Initialization of the class. If url is set, it gets performed.
 
         :param url: web-page url of the document
         :param positive_keywords: list of keywords, which are likely to be seen in classes or ids of tags
         :param negative_keywords: list of keywords, which are unlikely to be seen in classes or ids of tags
+        :param summary_sentences_qty: maximum quantity of summary sentences
+        :param headers: custom headers for GET request to obtain web page of the article
         """
         self._article_extractor = ArticleExtractor(positive_keywords=positive_keywords,
                                                    negative_keywords=negative_keywords)
@@ -66,6 +69,7 @@ class Wanish():
 
         self._source_html = None  # source html of the document (lxml doc)
         self._charset = None  # source html encoding
+        self._headers = headers if type(headers) == dict else {}  # custom headers for GET request
 
         # summarized text sentences quantity
         try:
@@ -92,10 +96,10 @@ class Wanish():
             return
 
         # get the page (bytecode)
-        # TODO: custom headers/custom timeout?
         try:
-            web_page = requests.get(self.url)
+            web_page = requests.get(self.url, headers=self._headers)
             self.url = web_page.url
+
             raw_html = web_page.content
 
             self._charset = get_encoding(raw_html)
@@ -112,6 +116,8 @@ class Wanish():
             self.error_msg = e
         except Timeout as e:
             self.error_msg = e
+        except TypeError as e:
+            self.error_msg = e
         finally:
             if self.error_msg:
                 return
@@ -119,20 +125,14 @@ class Wanish():
         if self._source_html is not None:
 
             # obtaining title
-            head_tag = self._source_html.find('head')
-            meta_titles = head_tag.xpath("//meta[@*='og:title']/@content")
-            try:
-                self.title = meta_titles[0]
-            except IndexError:
-                self.title = shorten_title(self._source_html)
+            self.title = shorten_title(self._source_html)
 
             # obtaining image url
-            meta_images = self._source_html.xpath("//meta[@*='og:image']/@content")
-            try:
-                self.image_url = meta_images[0]
+            self.image_url = get_image_url(self._source_html)
+            if self.image_url is not None:
                 image_url_node = "<meta itemprop=\"image\" content=\"%s\">" % self.image_url
                 image_url_img = "<img src=\"%s\" />" % self.image_url
-            except IndexError:
+            else:
                 image_url_node = image_url_img = ""
 
             # clean html
