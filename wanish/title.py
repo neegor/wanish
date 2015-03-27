@@ -68,9 +68,6 @@ def shorten_title(doc):
 
     if candidates:
         title = sorted(candidates, key=len)[-1]
-        print(' * candidates:')
-        for c in sorted(candidates, key=len):
-            print(c)
     else:
         for delimiter in [' | ', ' - ', ' :: ', ' / ']:
             if delimiter in title:
