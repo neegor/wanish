@@ -1,4 +1,4 @@
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 import requests
 from requests.exceptions import Timeout
 import struct
@@ -13,16 +13,23 @@ IMG_DOWNLOAD_TIMEOUT = 5  # sec
 LOGO_STUBS = ['logo', 'fb', 'og', 'default', 'share', 'facebook']
 
 
-def get_image_url(html):
+def get_image_url(html, source_url=None):
     """
     Getting image url from page meta and validating it
     :param html: html page element
+    :param source_url: url of the source html page, used for normalization of img links
     :return: url of the image
     """
     meta_images = html.xpath("//meta[@*='og:image']/@content")
     try:
         image_url = meta_images[0]
         parsed_url = urlparse(image_url)
+
+        # making image url absolute if needed
+        if len(parsed_url.netloc.strip()) == 0 and source_url is not None:
+            parsed_src_url = urlparse(source_url)
+            if len(parsed_src_url.netloc.strip()) > 0:
+                image_url = urljoin('%s://%s' % (parsed_src_url.scheme, parsed_src_url.netloc), parsed_url.path)
 
         # check if it has adequate extension and not a popular logo stub
         if (parsed_url.path.split('.')[-1] in ['jpg', 'jpeg', 'gif', 'png']) \
@@ -78,6 +85,6 @@ def fetch_image_data(img_url):
                 height, width = struct.unpack('>HH', fhandle.read(4))
             except Exception:  # IGNORE:W0703
                 return
-    except Timeout:
+    except (Timeout, TypeError):
         pass
     return width, height

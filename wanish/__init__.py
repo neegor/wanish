@@ -98,6 +98,12 @@ class Wanish():
         # get the page (bytecode)
         try:
             web_page = requests.get(self.url, headers=self._headers)
+
+            # perform http status codes
+            if web_page.status_code not in [200, 301, 302]:
+                self.error_msg = str('HTTP Error. Status: %s' % web_page.status_code)
+                return
+
             self.url = web_page.url
 
             raw_html = web_page.content
@@ -112,12 +118,8 @@ class Wanish():
             # making links absolute
             self._source_html.make_links_absolute(self.url, resolve_base_href=True)
 
-        except ConnectionError as e:
-            self.error_msg = e
-        except Timeout as e:
-            self.error_msg = e
-        except TypeError as e:
-            self.error_msg = e
+        except (ConnectionError, Timeout, TypeError, Exception) as e:
+            self.error_msg = str(e)
         finally:
             if self.error_msg:
                 return
@@ -128,7 +130,7 @@ class Wanish():
             self.title = shorten_title(self._source_html)
 
             # obtaining image url
-            self.image_url = get_image_url(self._source_html)
+            self.image_url = get_image_url(self._source_html, self.url)
             if self.image_url is not None:
                 image_url_node = "<meta itemprop=\"image\" content=\"%s\">" % self.image_url
                 image_url_img = "<img src=\"%s\" />" % self.image_url

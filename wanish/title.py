@@ -39,17 +39,18 @@ def add_match(collection, text, orig):
 
 def shorten_title(doc):
 
-    head_tag = doc.find('head')
-    meta_titles = head_tag.xpath("//meta[@*='og:title']/@content")
-    if len(meta_titles) > 0:
-        title = orig = norm_title(meta_titles[0])
-    else:
-        title = doc.find('.//title')
-        if title is None or title.text is None or len(title.text) == 0:
-            return ''
-        title = orig = norm_title(title.text)
+    title = doc.find('.//title')
+    if title is None or title.text is None or len(title.text) == 0:
+        return ''
+    title = orig = norm_title(title.text)
 
     candidates = set()
+
+    head_tag = doc.find('head')
+    if head_tag is not None:
+        meta_titles = head_tag.xpath("//meta[@*='og:title']/@content")
+        if meta_titles is not None and len(meta_titles) > 0:
+            add_match(candidates, norm_title(meta_titles[0]), orig)
 
     for item in ['.//h1', './/h2', './/h3']:
         for e in list(doc.iterfind(item)):
@@ -68,23 +69,26 @@ def shorten_title(doc):
 
     if candidates:
         title = sorted(candidates, key=len)[-1]
-    else:
-        for delimiter in [' | ', ' - ', ' :: ', ' / ']:
-            if delimiter in title:
-                parts = orig.split(delimiter)
-                if len(parts[0].split()) >= 4:
-                    title = parts[0]
-                    break
-                elif len(parts[-1].split()) >= 4:
-                    title = parts[-1]
-                    break
-        else:
-            if ': ' in title:
-                parts = orig.split(': ')
-                if len(parts[-1].split()) >= 4:
-                    title = parts[-1]
-                else:
-                    title = orig.split(': ', 1)[1]
+
+    sbd_flag = False  # splitted by delimiter flag
+    for delimiter in [' | ', ' - ', ' :: ', ' / ', ' → ']:
+        if delimiter in title:
+            parts = title.split(delimiter)
+            if len(parts[0].split()) >= 4:
+                title = parts[0]
+                sbd_flag = True
+
+            elif len(parts[-1].split()) >= 4:
+                title = parts[-1]
+                sbd_flag = True
+
+    if not sbd_flag:
+        if ': ' in title:
+            parts = title.split(': ')
+            if len(parts[-1].split()) >= 4:
+                title = parts[-1]
+            else:
+                title = orig.split(': ', 1)[1]
 
     if not 15 < len(title) < 150:
         return orig
