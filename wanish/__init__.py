@@ -1,4 +1,5 @@
 from lxml import etree
+from lxml.etree import strip_elements
 import requests
 from requests.exceptions import ConnectionError, Timeout
 from lxml.html import document_fromstring
@@ -117,6 +118,8 @@ class Wanish():
 
             # making links absolute
             self._source_html.make_links_absolute(self.url, resolve_base_href=True)
+
+            strip_elements(self._source_html, 'textarea')
 
         except (ConnectionError, Timeout, TypeError, Exception) as e:
             self.error_msg = str(e)

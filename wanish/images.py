@@ -10,7 +10,7 @@ MIN_IMG_HEIGHT = 225  # px
 IMG_DOWNLOAD_TIMEOUT = 5  # sec
 
 # markers for logo stubs that do not represent actual image of the article
-LOGO_STUBS = ['logo', 'fb', 'og', 'default', 'share', 'facebook']
+LOGO_STUBS = ['logo', 'fb', 'og', 'default', 'share', 'facebook', 'social']
 
 
 def get_image_url(html, source_url=None):

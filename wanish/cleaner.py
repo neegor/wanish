@@ -211,8 +211,12 @@ class ArticleExtractor():
         # should have a relatively small link density (5% or less) and be mostly unaffected by this operation.
         for elem in ordered:
             candidate = candidates[elem]
+
             ld = self.get_link_density(elem)
             candidate['content_score'] *= (1 - ld)
+
+            # Multiplying the score by multiplier of raw text length
+            candidate['content_score'] *= (1 + float(len(elem.text_content())) / 500)
 
         return candidates
 
