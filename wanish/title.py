@@ -39,36 +39,41 @@ def add_match(collection, text, orig):
 
 def shorten_title(doc):
 
-    title = doc.find('.//title')
-    if title is None or title.text is None or len(title.text) == 0:
-        return ''
-    title = orig = norm_title(title.text)
+    # looking for headlines first
+    headlines = doc.xpath("//*[@itemprop='headline']/text()")
+    if len(headlines) > 0:
+        return headlines[0]
 
-    candidates = set()
+    # otherwise looking for og:title attribute
+    meta_titles = doc.xpath("//meta[@*='og:title']/@content")
+    if len(meta_titles) > 0:
+        title = orig = meta_titles[0]
+    else:
+        # if no attributes, then doing it the long way
+        title = doc.find('.//title')
+        if title is None or title.text is None or len(title.text) == 0:
+            return ''
+        title = orig = norm_title(title.text)
 
-    head_tag = doc.find('head')
-    if head_tag is not None:
-        meta_titles = head_tag.xpath("//meta[@*='og:title']/@content")
-        if meta_titles is not None and len(meta_titles) > 0:
-            add_match(candidates, norm_title(meta_titles[0]), orig)
+        candidates = set()
 
-    for item in ['.//h1', './/h2', './/h3']:
-        for e in list(doc.iterfind(item)):
-            if e.text:
-                add_match(candidates, e.text, orig)
-            if e.text_content():
-                add_match(candidates, e.text_content(), orig)
+        for item in ['.//h1', './/h2', './/h3']:
+            for e in list(doc.iterfind(item)):
+                if e.text:
+                    add_match(candidates, e.text, orig)
+                if e.text_content():
+                    add_match(candidates, e.text_content(), orig)
 
-    for item in ['#title', '#head', '#heading', '.pageTitle', '.news_title',
-                 '.title', '.head', '.heading', '.contentheading', '.small_header_red']:
-        for e in doc.cssselect(item):
-            if e.text:
-                add_match(candidates, e.text, orig)
-            if e.text_content():
-                add_match(candidates, e.text_content(), orig)
+        for item in ['#title', '#head', '#heading', '.pageTitle', '.news_title',
+                     '.title', '.head', '.heading', '.contentheading', '.small_header_red']:
+            for e in doc.cssselect(item):
+                if e.text:
+                    add_match(candidates, e.text, orig)
+                if e.text_content():
+                    add_match(candidates, e.text_content(), orig)
 
-    if candidates:
-        title = sorted(candidates, key=len)[-1]
+        if candidates:
+            title = sorted(candidates, key=len)[-1]
 
     sbd_flag = False  # splitted by delimiter flag
     for delimiter in [' | ', ' - ', ' :: ', ' / ', ' → ']:
@@ -93,4 +98,10 @@ def shorten_title(doc):
     if not 15 < len(title) < 150:
         return orig
 
+    return title
+
+
+def test_title(doc):
+    title = doc.find('.//title')
+    print(title)
     return title

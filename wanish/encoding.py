@@ -4,8 +4,8 @@ import chardet
 
 def get_encoding(page):
     """
-    Получает кодировку страницы. Доработал прототип декодированной страницы через utf-8, ignore
-    для получения строк с возможной указанной кодировкой. Возвращает только название самой кодировки в виде строки.
+    Obtains page's charset. Fetching it from page decoded to utf8, ignore.
+    Returns charset name as string
     """
 
     page_prototype = page.decode("UTF-8", "ignore")

@@ -17,7 +17,7 @@ REGEXES = {
 }
 
 
-class ArticleExtractor():
+class ArticleExtractor(object):
     """
 
     """

@@ -43,7 +43,7 @@ ARTICLE_TEMPLATE = """<!DOCTYPE html>
 </html>"""
 
 
-class Wanish():
+class Wanish(object):
 
     def __init__(self, url=None, positive_keywords=None, negative_keywords=None, summary_sentences_qty=5, headers=None):
         """

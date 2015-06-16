@@ -15,14 +15,17 @@ LOGO_STUBS = ['logo', 'fb', 'og', 'default', 'share', 'facebook', 'social']
 
 def get_image_url(html, source_url=None):
     """
-    Getting image url from page meta and validating it
+    Getting image url from headline or page meta and validating it
     :param html: html page element
     :param source_url: url of the source html page, used for normalization of img links
     :return: url of the image
     """
-    meta_images = html.xpath("//meta[@*='og:image']/@content")
+    images_data = html.xpath("//img[@itemprop='image']/@src")
+    if len(images_data) == 0:
+        images_data = html.xpath("//meta[@*='og:image']/@content")
+
     try:
-        image_url = meta_images[0]
+        image_url = images_data[0]
         parsed_url = urlparse(image_url)
 
         # making image url absolute if needed
