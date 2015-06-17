@@ -145,9 +145,15 @@ class Wanish(object):
 
             # summarized description, requires clean_html
             if self.clean_html:
+
                 self.description, self.language = get_plain_text(etree.XML(self.clean_html),
                                                                  self._summary_sentences_qty)
-                description_node = "<meta name=\"description\" content=\"%s\">" if self.description else ""
+
+                description_node = ""
+                if self.description:
+                    # Replacing \xc2\xa0 and \xa0 in result with space
+                    self.description = self.description.replace(u'\xc2\xa0', u' ').replace(u'\xa0', u' ')
+                    description_node = "<meta name=\"description\" content=\"%s\">" if self.description else ""
 
                 # filling the template
                 self.clean_html = ARTICLE_TEMPLATE % {

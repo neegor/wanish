@@ -46,10 +46,14 @@ class ArticleExtractor(object):
             while True:
                 self._html = source_html  # reinitialization of current performing html
 
-                # narrowing the scope to article or body tags.
+                # narrowing the scope to articleBody, article or body tags.
+                article_body = self._html.xpath("//*[@itemprop='articleBody']")
                 articles = self._html.xpath("//article")
                 body = self._html.xpath("//body")
-                if len(articles) > 0:
+                if len(article_body) > 0:
+                    self._html = article_body[0]
+                    html_partial = True
+                elif len(articles) > 0:
                     self._html = articles[0]
                     html_partial = True
                 elif len(body) > 0:
