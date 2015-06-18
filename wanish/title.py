@@ -39,10 +39,15 @@ def add_match(collection, text, orig):
 
 def shorten_title(doc):
 
-    # looking for headlines first
+    # looking for tag containing itemprop='headline' first
     headlines = doc.xpath("//*[@itemprop='headline']/text()")
     if len(headlines) > 0:
         return headlines[0]
+
+    # looking for tag containing itemprop='name' if exists
+    names = doc.xpath("//*[@itemprop='name']/text()")
+    if len(names) > 0:
+        return names[0]
 
     # otherwise looking for og:title attribute
     meta_titles = doc.xpath("//meta[@*='og:title']/@content")
@@ -76,7 +81,7 @@ def shorten_title(doc):
             title = sorted(candidates, key=len)[-1]
 
     sbd_flag = False  # splitted by delimiter flag
-    for delimiter in [' | ', ' - ', ' :: ', ' / ', ' → ']:
+    for delimiter in [' | ', ' - ', ' :: ', ' / ', ' // ', ' → ']:
         if delimiter in title:
             parts = title.split(delimiter)
             if len(parts[0].split()) >= 4:
@@ -87,13 +92,13 @@ def shorten_title(doc):
                 title = parts[-1]
                 sbd_flag = True
 
-    if not sbd_flag:
-        if ': ' in title:
-            parts = title.split(': ')
-            if len(parts[-1].split()) >= 4:
-                title = parts[-1]
-            else:
-                title = orig.split(': ', 1)[1]
+    # if not sbd_flag:
+    #     if ': ' in title:
+    #         parts = title.split(': ')
+    #         if len(parts[-1].split()) >= 4:
+    #             title = parts[-1]
+    #         else:
+    #             title = orig.split(': ', 1)[1]
 
     if not 15 < len(title) < 150:
         return orig
