@@ -120,7 +120,7 @@ class Wanish(object):
             self._source_html.make_links_absolute(self.url, resolve_base_href=True)
 
             strip_elements(self._source_html, 'blockquote', 'code', 'table', 'ol', 'ul', 'form',
-                           'embedded', 'input', 'address', 'iframe', 'textarea')
+                           'embedded', 'input', 'address', 'iframe', 'textarea', 'dl')
 
         except (ConnectionError, Timeout, TypeError, Exception) as e:
             self.error_msg = str(e)
