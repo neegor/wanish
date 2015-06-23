@@ -30,6 +30,13 @@ def norm_title(title):
     return normalize_entities(normalize_spaces(title))
 
 
+def add_match(collection, text, orig):
+    text = norm_title(text)
+    if len(text.split()) >= 2 and len(text) >= 15:
+        if text.replace('"', '') in orig.replace('"', ''):
+            collection.add(text)
+
+
 # http://stackoverflow.com/questions/22726177/longest-common-substring-without-cutting-a-word-python
 def longest_common_substring(s1, s2):
     m = [[0] * (1 + len(s2)) for i in range(1 + len(s1))]
@@ -70,33 +77,79 @@ def shorten_title(doc):
     if len(names) > 0:
         return normalize_spaces(names[0])
 
-    candidates = []
-
     # otherwise looking for og:title attribute
     meta_titles = doc.xpath("//meta[@*='og:title']/@content")
 
     if len(meta_titles) > 0:
+        candidates = []
         candidates.append(normalize_spaces(meta_titles[0]))
+
+        # getting headings from h1, h2, h3
+        headings = doc.xpath("//h1/text() | //h2/text() | //h3/text()")
+
+        for heading in headings:
+            candidates.append(normalize_spaces(heading))
+
+        commons = []
+
+        for idx in range(1, len(candidates)):
+            common = longest_common_sentence(candidates[0], candidates[idx])
+            if len(common) > 0 and common not in commons:
+                commons.append(common)
+
+        if len(commons) > 0:
+            return sorted(commons, key=len)[-1]
+        else:
+            return ""
+
     else:
-        # getting title of the page
-        page_title = doc.xpath("//title/text()")
-        if len(page_title) > 0:
-            candidates.append(normalize_spaces(page_title[0]))
+        # if no attributes, then doing it the long way
+        title = doc.find('.//title')
+        if title is None or title.text is None or len(title.text) == 0:
+            return ''
+        title = orig = norm_title(title.text)
 
-    # getting headings from h1, h2, h3
-    headings = doc.xpath("//h1/text() | //h2/text() | //h3/text()")
+        candidates = set()
 
-    for heading in headings:
-        candidates.append(normalize_spaces(heading))
+        for item in ['.//h1', './/h2', './/h3']:
+            for e in list(doc.iterfind(item)):
+                if e.text:
+                    add_match(candidates, e.text, orig)
+                if e.text_content():
+                    add_match(candidates, e.text_content(), orig)
 
-    commons = []
+        for item in ['#title', '#head', '#heading', '.pageTitle', '.news_title',
+                     '.title', '.head', '.heading', '.contentheading', '.small_header_red']:
+            for e in doc.cssselect(item):
+                if e.text:
+                    add_match(candidates, e.text, orig)
+                if e.text_content():
+                    add_match(candidates, e.text_content(), orig)
 
-    for idx in range(1, len(candidates)):
-        common = longest_common_sentence(candidates[0], candidates[idx])
-        if len(common) > 0 and common not in commons:
-            commons.append(common)
+        if candidates:
+            title = sorted(candidates, key=len)[-1]
 
-    if len(commons) > 0:
-        return sorted(commons, key=len)[-1]
-    else:
-        return ""
+        sbd_flag = False  # splitted by delimiter flag
+        for delimiter in [' | ', ' - ', ' :: ', ' / ', ' // ', ' → ']:
+            if delimiter in title:
+                parts = title.split(delimiter)
+                if len(parts[0].split()) >= 4:
+                    title = parts[0]
+                    sbd_flag = True
+
+                elif len(parts[-1].split()) >= 4:
+                    title = parts[-1]
+                    sbd_flag = True
+
+        # if not sbd_flag:
+        #     if ': ' in title:
+        #         parts = title.split(': ')
+        #         if len(parts[-1].split()) >= 4:
+        #             title = parts[-1]
+        #         else:
+        #             title = orig.split(': ', 1)[1]
+
+        if not 15 < len(title) < 150:
+            return orig
+
+        return title
