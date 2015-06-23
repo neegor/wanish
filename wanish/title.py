@@ -85,7 +85,7 @@ def shorten_title(doc):
         candidates.append(normalize_spaces(meta_titles[0]))
 
         # getting headings from h1, h2, h3
-        headings = doc.xpath("//h1/text() | //h2/text() | //h3/text()")
+        headings = doc.xpath("//h1/text() | //h2/text() | //h3/text() | //span/text()")
 
         for heading in headings:
             candidates.append(normalize_spaces(heading))
@@ -128,26 +128,6 @@ def shorten_title(doc):
 
         if candidates:
             title = sorted(candidates, key=len)[-1]
-
-        sbd_flag = False  # splitted by delimiter flag
-        for delimiter in [' | ', ' - ', ' :: ', ' / ', ' // ', ' → ']:
-            if delimiter in title:
-                parts = title.split(delimiter)
-                if len(parts[0].split()) >= 4:
-                    title = parts[0]
-                    sbd_flag = True
-
-                elif len(parts[-1].split()) >= 4:
-                    title = parts[-1]
-                    sbd_flag = True
-
-        # if not sbd_flag:
-        #     if ': ' in title:
-        #         parts = title.split(': ')
-        #         if len(parts[-1].split()) >= 4:
-        #             title = parts[-1]
-        #         else:
-        #             title = orig.split(': ', 1)[1]
 
         if not 15 < len(title) < 150:
             return orig
