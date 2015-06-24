@@ -85,7 +85,7 @@ def shorten_title(doc):
         candidates.append(normalize_spaces(meta_titles[0]))
 
         # getting headings from h1, h2, h3
-        headings = doc.xpath("//h1/text() | //h2/text() | //h3/text() | //span/text()")
+        headings = doc.xpath("//h1/text() | //h2/text() | //h3/text() | //span/text() | //a/text()")
 
         for heading in headings:
             candidates.append(normalize_spaces(heading))
