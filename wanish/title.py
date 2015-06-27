@@ -67,18 +67,22 @@ def longest_common_sentence(s1, s2):
 
 def shorten_title(doc):
 
+    print(doc)
+
     # looking for tag containing itemprop='headline' first
-    headlines = doc.xpath("//*[@itemprop='headline']/text()")
+    headlines = doc.xpath("//*[normalize-space(@itemprop)='headline']/text()")
+    print('headlines: %s' % headlines)
     if len(headlines) > 0:
         return normalize_spaces(headlines[0])
 
     # looking for tag containing itemprop='name' if exists
-    names = doc.xpath("//*[@itemprop='name']/text()")
+    names = doc.xpath("//*[normalize-space(@itemprop)='name']/text()")
+    print('names: %s' % names)
     if len(names) > 0:
         return normalize_spaces(names[0])
 
     # otherwise looking for og:title attribute
-    meta_titles = doc.xpath("//meta[@*='og:title']/@content")
+    meta_titles = doc.xpath("//meta[normalize-space(@*)='og:title']/@content")
 
     if len(meta_titles) > 0:
         candidates = []

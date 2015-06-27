@@ -22,11 +22,11 @@ def get_image_url(html, source_url=None):
     """
 
     # gettng images' urls from micro formats
-    images_data = html.xpath("//img[@itemprop='image']/@src")
+    images_data = html.xpath("//img[normalize-space(@itemprop)='image']/@src")
     if len(images_data) == 0:
-        images_data = html.xpath("//img[@itemprop='associatedMedia']/@src")
+        images_data = html.xpath("//img[normalize-space(@itemprop)='associatedMedia']/@src")
     if len(images_data) == 0:
-        images_data = html.xpath("//meta[@*='og:image']/@content")
+        images_data = html.xpath("//meta[normalize-space(@*)='og:image']/@content")
 
     try:
         image_url = images_data[0]
