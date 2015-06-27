@@ -59,6 +59,7 @@ class Wanish(object):
                                                    negative_keywords=negative_keywords)
 
         self.url = None  # source web-page url
+        self.canonical_url = None  # canonical web-page url if present, otherwise same as url
 
         self.title = None  # document's title
         self.image_url = None  # document's image url
@@ -114,6 +115,11 @@ class Wanish(object):
 
             # getting and cleaning the document
             self._source_html = document_fromstring(raw_html_str)
+
+            # searching for canonical url
+            link_canonicals = self._source_html.xpath("//link[@rel='canonical']/@href")
+            self.canonical_url = link_canonicals[0] if len(link_canonicals) > 0 else self.url
+
             self._source_html = html_cleaner.clean_html(self._source_html)
 
             # making links absolute
