@@ -77,14 +77,19 @@ def shorten_title(doc):
     if len(names) > 0:
         return normalize_spaces(names[0])
 
+    # looking for tag <article> containing attribute data-title
+    article_data_titles = doc.xpath("//article/@data-title")
+    if len(article_data_titles) > 0:
+        return normalize_spaces(article_data_titles[0])
+
     # looking for h1/h2/h3 with "head" ot "title" substrings in it
     possible_h1_headers = doc.xpath("//h1[contains(@class, 'head')]/text() | //h1[contains(@class, 'title')]/text()")
     if len(possible_h1_headers) > 0:
         return possible_h1_headers[0]
 
-    possible_h2_headers = doc.xpath("//h2[contains(@class, 'head')]/text() | //h2[contains(@class, 'title')]/text()")
-    if len(possible_h2_headers) > 0:
-        return possible_h2_headers[0]
+    # possible_h2_headers = doc.xpath("//h2[contains(@class, 'head')]/text() | //h2[contains(@class, 'title')]/text()")
+    # if len(possible_h2_headers) > 0:
+    #     return possible_h2_headers[0]
 
     # otherwise looking for og:title attribute
     meta_titles = doc.xpath("//meta[normalize-space(@*)='og:title']/@content")
