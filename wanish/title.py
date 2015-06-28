@@ -83,38 +83,14 @@ def shorten_title(doc):
         return normalize_spaces(article_data_titles[0])
 
     # looking for h1/h2/h3 with "head" ot "title" substrings in it
-    possible_h1_headers = doc.xpath("//h1[contains(@class, 'head')]/text() | //h1[contains(@class, 'title')]/text()")
+    possible_h1_headers = doc.xpath("//h1[contains(@class, 'head')] | //h1[contains(@class, 'title')]")
     if len(possible_h1_headers) > 0:
-        return possible_h1_headers[0]
-
-    # possible_h2_headers = doc.xpath("//h2[contains(@class, 'head')]/text() | //h2[contains(@class, 'title')]/text()")
-    # if len(possible_h2_headers) > 0:
-    #     return possible_h2_headers[0]
+        return normalize_spaces(possible_h1_headers[0].xpath("string()"))
 
     # otherwise looking for og:title attribute
     meta_titles = doc.xpath("//meta[normalize-space(@*)='og:title']/@content")
-
     if len(meta_titles) > 0:
-        candidates = []
-        candidates.append(normalize_spaces(meta_titles[0]))
-
-        # getting headings from h1, h2, h3
-        headings = doc.xpath("//h1/text() | //h2/text() | //h3/text() | //span/text() | //a/text()")
-
-        for heading in headings:
-            candidates.append(normalize_spaces(heading))
-
-        commons = []
-
-        for idx in range(1, len(candidates)):
-            common = longest_common_sentence(candidates[0], candidates[idx])
-            if len(common) > 0 and common not in commons:
-                commons.append(common)
-
-        if len(commons) > 0:
-            return sorted(commons, key=len)[-1]
-        else:
-            return ""
+        return normalize_spaces(meta_titles[0])
 
     else:
         # if no attributes, then doing it the long way
