@@ -26,6 +26,8 @@ def get_image_url(html, source_url=None):
     if len(images_data) == 0:
         images_data = html.xpath("//img[normalize-space(@itemprop)='associatedMedia']/@src")
     if len(images_data) == 0:
+        images_data = html.xpath("//meta[@*='og:image']/@content")
+    if len(images_data) == 0:
         images_data = html.xpath("//meta[normalize-space(@*)='og:image']/@content")
 
     try:
@@ -39,8 +41,10 @@ def get_image_url(html, source_url=None):
                 image_url = urljoin('%s://%s' % (parsed_src_url.scheme, parsed_src_url.netloc), parsed_url.path)
 
         # check if it has adequate extension and not a popular logo stub
-        if (parsed_url.path.split('.')[-1] in ['jpg', 'jpeg', 'gif', 'png']) \
-                and not any(sub in parsed_url.path for sub in LOGO_STUBS):
+        # TODO: do something with bug that will skip for example this link:
+        # http://somedomaingoeshere.ru/55adfb4995a65610ea000081.jpg'
+        if (str(parsed_url.path.split('.')[-1]) in ['jpg', 'jpeg', 'gif', 'png']) \
+                and not any(sub in str(parsed_url.path) for sub in LOGO_STUBS):
 
             # getting it's width and height, checking for size - stubs are usually not so wide
             w, h = fetch_image_data(image_url)
