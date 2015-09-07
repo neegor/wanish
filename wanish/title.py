@@ -42,22 +42,18 @@ def shorten_title(doc):
     # looking for tag containing itemprop='headline' first
     headlines = doc.xpath("//*[normalize-space(@itemprop)='headline']/text()")
     if len(headlines) > 0:
-        print(1)
         return normalize_spaces(headlines[0])
 
     # looking for tag containing itemprop='name' if exists
     names = doc.xpath("//*[normalize-space(@itemprop)='name']/text()")
     if len(names) > 0:
-        print(2)
         return normalize_spaces(names[0])
 
     # otherwise looking for og:title attribute
     meta_titles = doc.xpath("//meta[normalize-space(@*)='og:title']/@content")
     if len(meta_titles) > 0:
-        print(5)
         return normalize_spaces(meta_titles[0])
 
-    print(6)
     # if no attributes, then doing it the long way
     title = doc.find('.//title')
     if title is None or title.text is None or len(title.text) == 0:
