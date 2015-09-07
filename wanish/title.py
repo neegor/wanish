@@ -42,56 +42,49 @@ def shorten_title(doc):
     # looking for tag containing itemprop='headline' first
     headlines = doc.xpath("//*[normalize-space(@itemprop)='headline']/text()")
     if len(headlines) > 0:
+        print(1)
         return normalize_spaces(headlines[0])
 
     # looking for tag containing itemprop='name' if exists
     names = doc.xpath("//*[normalize-space(@itemprop)='name']/text()")
     if len(names) > 0:
+        print(2)
         return normalize_spaces(names[0])
-
-    # looking for tag <article> containing attribute data-title
-    article_data_titles = doc.xpath("//article/@data-title")
-    if len(article_data_titles) > 0:
-        return normalize_spaces(article_data_titles[0])
-
-    # looking for h1/h2/h3 with "head" ot "title" substrings in it
-    possible_h1_headers = doc.xpath("//h1[contains(@class, 'head')] | //h1[contains(@class, 'title')]")
-    if len(possible_h1_headers) > 0:
-        return normalize_spaces(possible_h1_headers[0].xpath("string()"))
 
     # otherwise looking for og:title attribute
     meta_titles = doc.xpath("//meta[normalize-space(@*)='og:title']/@content")
     if len(meta_titles) > 0:
+        print(5)
         return normalize_spaces(meta_titles[0])
 
-    else:
-        # if no attributes, then doing it the long way
-        title = doc.find('.//title')
-        if title is None or title.text is None or len(title.text) == 0:
-            return ''
-        title = orig = norm_title(title.text)
+    print(6)
+    # if no attributes, then doing it the long way
+    title = doc.find('.//title')
+    if title is None or title.text is None or len(title.text) == 0:
+        return ''
+    title = orig = norm_title(title.text)
 
-        candidates = set()
+    candidates = set()
 
-        for item in ['.//h1', './/h2', './/h3']:
-            for e in list(doc.iterfind(item)):
-                if e.text:
-                    add_match(candidates, e.text, orig)
-                if e.text_content():
-                    add_match(candidates, e.text_content(), orig)
+    for item in ['.//h1', './/h2', './/h3']:
+        for e in list(doc.iterfind(item)):
+            if e.text:
+                add_match(candidates, e.text, orig)
+            if e.text_content():
+                add_match(candidates, e.text_content(), orig)
 
-        for item in ['#title', '#head', '#heading', '.pageTitle', '.news_title',
-                     '.title', '.head', '.heading', '.contentheading', '.small_header_red']:
-            for e in doc.cssselect(item):
-                if e.text:
-                    add_match(candidates, e.text, orig)
-                if e.text_content():
-                    add_match(candidates, e.text_content(), orig)
+    for item in ['#title', '#head', '#heading', '.pageTitle', '.news_title',
+                 '.title', '.head', '.heading', '.contentheading', '.small_header_red']:
+        for e in doc.cssselect(item):
+            if e.text:
+                add_match(candidates, e.text, orig)
+            if e.text_content():
+                add_match(candidates, e.text_content(), orig)
 
-        if candidates:
-            title = sorted(candidates, key=len)[-1]
+    if candidates:
+        title = sorted(candidates, key=len)[-1]
 
-        if not 15 < len(title) < 150:
-            return orig
+    if not 15 < len(title) < 150:
+        return orig
 
-        return title
+    return title
