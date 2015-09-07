@@ -4,7 +4,7 @@ from requests.exceptions import Timeout
 import struct
 from io import BytesIO
 
-MIN_IMG_WIDTH = 500  # px
+MIN_IMG_WIDTH = 400  # px
 MIN_IMG_HEIGHT = 225  # px
 
 IMG_DOWNLOAD_TIMEOUT = 5  # sec
