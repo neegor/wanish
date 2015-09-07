@@ -40,6 +40,11 @@ def add_match(collection, text, orig):
 def shorten_title(doc):
 
     # looking for tag containing itemprop='headline' first
+    headlines = doc.xpath("//h1[normalize-space(@itemprop)='headline']/text()")
+    if len(headlines) > 0:
+        return normalize_spaces(headlines[0])
+
+    # looking for tag containing itemprop='headline' first
     headlines = doc.xpath("//*[normalize-space(@itemprop)='headline']/text()")
     if len(headlines) > 0:
         return normalize_spaces(headlines[0])
