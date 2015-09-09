@@ -2,7 +2,7 @@ from lxml import etree
 from lxml.etree import strip_elements
 import requests
 from requests.exceptions import ConnectionError, Timeout
-from lxml.html import document_fromstring
+from lxml.html import document_fromstring, fromstring
 
 from wanish.cleaner import html_cleaner, ArticleExtractor
 from wanish.encoding import get_encoding
@@ -113,8 +113,36 @@ class Wanish(object):
             self._charset = get_encoding(raw_html)
             raw_html_str = raw_html.decode(self._charset)
 
+            # TODO: Here we strip html code of tags besides <article> if they present and html could be malformed.
+
+            is_finished = False
+            idx = 0
+            lowercased_raw_html_str = raw_html_str.lower()
+            performed_raw_html = ""
+            while not is_finished:
+                article_start_tag_idx = lowercased_raw_html_str.find('<article', idx)
+                if article_start_tag_idx < 0:
+                    break
+
+                if article_start_tag_idx > idx:
+                    idx = article_start_tag_idx
+                    article_end_tag_idx = lowercased_raw_html_str.find('</article>', idx)
+
+                    if article_end_tag_idx < 0:
+                        performed_raw_html = performed_raw_html + raw_html_str[article_start_tag_idx:]
+                        break
+                    else:
+                        idx = article_end_tag_idx+10
+                        performed_raw_html = performed_raw_html + raw_html_str[article_start_tag_idx:idx]
+
+                if idx >= len(lowercased_raw_html_str):
+                    break
+
+            if len(performed_raw_html) > 0:
+                raw_html_str = performed_raw_html
+
             # getting and cleaning the document
-            self._source_html = document_fromstring(raw_html_str)
+            self._source_html = fromstring(raw_html_str)
 
             # searching for canonical url
             link_canonicals = self._source_html.xpath("//link[normalize-space(@rel)='canonical']/@href")
