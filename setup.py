@@ -13,7 +13,7 @@ if sys.platform == 'darwin':
 
 setup(
     name="wanish",
-    version="0.5.0",
+    version="0.5.1",
     author="Igor Gorschal",
     author_email="gorschal@gmail.com",
     description="open source implementation of summly",
