@@ -1,43 +1,36 @@
-import re
-import chardet
+from lxml.html import fromstring
+import cgi
 
 
-def get_encoding(page):
+def get_encodings(page):
     """
     Obtains page's charset. Fetching it from page decoded to utf8, ignore.
     Returns charset name as string
     """
 
-    page_prototype = page.decode("UTF-8", "ignore")
+    detected_charsets = []
+    page_prototype = fromstring(page.decode("UTF-8", "ignore"))
+    page_head = page_prototype.xpath(".//head")[0]
 
     # Regex for XML and HTML Meta charset declaration
-    charset_re = re.compile(r'<meta.*?charset=["\']*(.+?)["\'>]', flags=re.I)
-    pragma_re = re.compile(r'<meta.*?content=["\']*;?charset=(.+?)["\'>]', flags=re.I)
-    xml_re = re.compile(r'^<\?xml.*?encoding=["\']*(.+?)["\'>]')
+    meta_charset_nodes = page_head.xpath(".//meta/@charset")
+    for node in meta_charset_nodes:
+        print('meta_charset_nodes node: %s' % node)
+        detected_charsets.append(custom_decode(node))
 
-    declared_encodings = (charset_re.findall(page_prototype) +
-                          pragma_re.findall(page_prototype) +
-                          xml_re.findall(page_prototype))
+    meta_content_type_nodes = page_head.xpath(".//meta[@http-equiv='Content-Type']/@content")
+    for node in meta_content_type_nodes:
+        print(' meta_content_type_nodes node: %s' % node)
+        _, params = cgi.parse_header(node)
+        if 'charset' in params:
+            detected_charsets.append(custom_decode(params['charset']))
 
-    # Try any declared encodings
-    if len(declared_encodings) > 0:
-        for declared_encoding in declared_encodings:
-            try:
-                page.decode(custom_decode(declared_encoding))
-                return custom_decode(declared_encoding)
-            except UnicodeDecodeError:
-                pass
+    xml_encoding_nodes = page_prototype.xpath(".//xml/@encoding")
+    for node in xml_encoding_nodes:
+        print('xml_encoding_nodes node: %s' % node)
+        detected_charsets.append(custom_decode(node))
 
-    # Fallback to chardet if declared encodings fail
-    text = re.sub('</?[^>]*>\s*', ' ', page_prototype)
-    enc = 'utf-8'
-    if not text.strip() or len(text) < 10:
-        return enc  # can't guess
-    res = chardet.detect(page)
-    enc = res['encoding']
-
-    enc = custom_decode(enc)
-    return enc
+    return detected_charsets
 
 
 def custom_decode(encoding):

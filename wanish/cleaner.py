@@ -16,6 +16,40 @@ REGEXES = {
     'divToPElementsRe': re.compile('<(a|blockquote|dl|div|img|ol|p|pre|table|ul)', re.I),
 }
 
+ESCAPED_ENTITIES = {
+    " ": ("&nbsp;", "&#160;"),
+    "£": ("&pound;", "&#163;"),
+    "€": ("&euro;", "&#8364;"),
+    "¶": ("&para;", "&#182;"),
+    "§": ("&sect;", "&#167;"),
+    "©": ("&copy;", "&#169;"),
+    "®": ("&reg;", "&#174;"),
+    "™": ("&trade;", "&#8482;"),
+    "°": ("&deg;", "&#176;"),
+    "±": ("&plusmn;", "&#177;"),
+    "¼": ("&frac14;", "&#188;"),
+    "½": ("&frac12;", "&#189;"),
+    "¾": ("&frac34;", "&#190;"),
+    "×": ("&times;", "&#215;"),
+    "÷": ("&divide;", "&#247;"),
+    "ƒ": ("&fnof;", "&#402;"),
+    "…": ("&hellip;", "&#8230;"),
+    "′": ("&prime;", "&#8242;"),
+    "″": ("&Prime;", "&#8243;"),
+    "–": ("&ndash;", "&#8211;"),
+    "—": ("&mdash;", "&#8212;"),
+    "\"": ("&quot;", "&#34;"),
+    "'": ("&apos;", "&#39;"),
+    "‘": ("&lsquo;", "&#8216;"),
+    "’": ("&rsquo;", "&#8217;"),
+    "‚": ("&sbquo;", "&#8218;"),
+    "“": ("&ldquo;", "&#8220;"),
+    "”": ("&rdquo;", "&#8221;"),
+    "„": ("&bdquo;", "&#8222;"),
+    "«": ("&laquo;", "&#171;"),
+    "»": ("&raquo;", "&#187;"),
+}
+
 
 class ArticleExtractor(object):
     """
@@ -553,3 +587,15 @@ def compile_pattern(elements):
     if isinstance(elements, str):
         elements = elements.split(',')
     return re.compile('|'.join([re.escape(x.lower()) for x in elements]), re.U)
+
+
+def clean_entities(text):
+    """
+    Cleans text of escaped entities.
+    :param text: input text
+    :return: text without escaped entities
+    """
+    for key, seq in ESCAPED_ENTITIES.items():
+        for val in seq:
+            text = text.replace(val, key)
+    return text

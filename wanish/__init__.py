@@ -1,15 +1,15 @@
-from io import StringIO, BytesIO
 from lxml import etree
-from lxml.etree import strip_elements, XMLParser, parse, tostring
+from lxml.etree import strip_elements
 import requests
 from requests.exceptions import ConnectionError, Timeout
-from lxml.html import document_fromstring, fromstring, Element
+from lxml.html import fromstring
 
-from wanish.cleaner import html_cleaner, ArticleExtractor
-from wanish.encoding import get_encoding
+from wanish.cleaner import html_cleaner, ArticleExtractor, clean_entities
+from wanish.encoding import get_encodings
 from wanish.images import get_image_url
 from wanish.title import shorten_title
 
+import chardet
 
 # Initialization of lang analyzer. Takes some time.
 from wanish.langid import LanguageIdentifier, model
@@ -104,20 +104,27 @@ class Wanish(object):
 
             # perform http status codes
             if web_page.status_code not in [200, 301, 302]:
-                self.error_msg = str('HTTP Error. Status: %s' % web_page.status_code)
+                self.error_msg = str('HTTP error. Status: %s' % web_page.status_code)
                 return
 
             self.url = web_page.url
 
             raw_html = web_page.content
 
-            self._charset = get_encoding(raw_html)
+            # getting content_type from headers to obtain encoding, will use it if it is not specified on page
+            page_encodings = get_encodings(raw_html)
 
-            our_parser = XMLParser(encoding=self._charset, recover=True)
-            
-            # getting and cleaning the document
-            self._source_html = parse(BytesIO(raw_html), parser=our_parser)
-            self._source_html = fromstring(tostring(self._source_html))
+            if len(page_encodings) > 0:
+                self._charset = page_encodings[0]
+            elif web_page.encoding is not None:
+                self._charset = web_page.encoding
+            else:
+                res = chardet.detect(raw_html)
+                self._charset = res['encoding']
+
+            string_source = raw_html.decode(self._charset, "ignore")
+            string_source = clean_entities(string_source)
+            self._source_html = fromstring(string_source)
 
             # searching for canonical url
             link_canonicals = self._source_html.xpath("//link[normalize-space(@rel)='canonical']/@href")
