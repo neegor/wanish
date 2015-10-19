@@ -123,7 +123,6 @@ class Wanish(object):
                 self._charset = res['encoding']
 
             string_source = raw_html.decode(self._charset, "ignore")
-            string_source = clean_entities(string_source)
             self._source_html = fromstring(string_source)
 
             # searching for canonical url
@@ -147,7 +146,7 @@ class Wanish(object):
         if self._source_html is not None:
 
             # obtaining title
-            self.title = shorten_title(self._source_html)
+            self.title = clean_entities(shorten_title(self._source_html))
 
             # obtaining image url
             self.image_url = get_image_url(self._source_html, self.url)
@@ -170,6 +169,7 @@ class Wanish(object):
                 if self.description:
                     # Replacing \xc2\xa0 and \xa0 in result with space
                     self.description = self.description.replace(u'\xc2\xa0', u' ').replace(u'\xa0', u' ')
+                    self.description = clean_entities(self.description)
                     description_node = "<meta name=\"description\" content=\"%s\">" if self.description else ""
 
                 # filling the template
