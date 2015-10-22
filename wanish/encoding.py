@@ -15,19 +15,16 @@ def get_encodings(page):
     # Regex for XML and HTML Meta charset declaration
     meta_charset_nodes = page_head.xpath(".//meta/@charset")
     for node in meta_charset_nodes:
-        print('meta_charset_nodes node: %s' % node)
         detected_charsets.append(custom_decode(node))
 
     meta_content_type_nodes = page_head.xpath(".//meta[@http-equiv='Content-Type']/@content")
     for node in meta_content_type_nodes:
-        print(' meta_content_type_nodes node: %s' % node)
         _, params = cgi.parse_header(node)
         if 'charset' in params:
             detected_charsets.append(custom_decode(params['charset']))
 
     xml_encoding_nodes = page_prototype.xpath(".//xml/@encoding")
     for node in xml_encoding_nodes:
-        print('xml_encoding_nodes node: %s' % node)
         detected_charsets.append(custom_decode(node))
 
     return detected_charsets
