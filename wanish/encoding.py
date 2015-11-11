@@ -17,7 +17,9 @@ def get_encodings(page):
     for node in meta_charset_nodes:
         detected_charsets.append(custom_decode(node))
 
-    meta_content_type_nodes = page_head.xpath(".//meta[@http-equiv='Content-Type']/@content")
+    meta_content_type_nodes = page_head.xpath(
+        ".//meta[translate(@http-equiv, 'CONTEYP', 'conteyp')='content-type']/@content"
+    )
     for node in meta_content_type_nodes:
         _, params = cgi.parse_header(node)
         if 'charset' in params:
