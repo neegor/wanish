@@ -56,6 +56,8 @@ class Wanish(object):
         :param summary_sentences_qty: maximum quantity of summary sentences
         :param headers: custom headers for GET request to obtain web page of the article
         """
+        # TODO: customizable redirects limit?
+
         self._article_extractor = ArticleExtractor(positive_keywords=positive_keywords,
                                                    negative_keywords=negative_keywords)
 
@@ -144,12 +146,11 @@ class Wanish(object):
                 return
 
         if self._source_html is not None:
-
             # obtaining title
             self.title = clean_entities(shorten_title(self._source_html))
 
             # obtaining image url
-            self.image_url = get_image_url(self._source_html, self.url)
+            self.image_url = get_image_url(self._source_html, self.url, self._headers)
             if self.image_url is not None:
                 image_url_node = "<meta itemprop=\"image\" content=\"%s\">" % self.image_url
                 image_url_img = "<img src=\"%s\" />" % self.image_url
@@ -161,7 +162,6 @@ class Wanish(object):
 
             # summarized description, requires clean_html
             if self.clean_html:
-
                 self.description, self.language = get_plain_text(etree.XML(self.clean_html),
                                                                  self._summary_sentences_qty)
 

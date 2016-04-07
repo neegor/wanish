@@ -13,7 +13,7 @@ IMG_DOWNLOAD_TIMEOUT = 5  # sec
 LOGO_STUBS = ['logo', 'fb', 'og', 'default', 'share', 'facebook', 'social']
 
 
-def get_image_url(html, source_url=None):
+def get_image_url(html, source_url=None, headers=None):
     """
     Getting image url from headline or page meta and validating it
     :param html: html page element
@@ -47,7 +47,7 @@ def get_image_url(html, source_url=None):
                 and not any(sub in str(parsed_url.path) for sub in LOGO_STUBS):
 
             # getting it's width and height, checking for size - stubs are usually not so wide
-            w, h = fetch_image_data(image_url)
+            w, h = fetch_image_data(image_url, headers=headers)
             if w < MIN_IMG_WIDTH:
                 return None
             return image_url
@@ -59,7 +59,7 @@ def get_image_url(html, source_url=None):
 
 
 # http://stackoverflow.com/questions/8032642/how-to-obtain-image-size-using-standard-python-class-without-using-external-lib
-def fetch_image_data(img_url):
+def fetch_image_data(img_url, headers=None):
     """
     detects format of the image and returns its width and height from meta
     :param img_url: url of the image
@@ -68,7 +68,7 @@ def fetch_image_data(img_url):
     width = -1
     height = -1
     try:
-        r = requests.get(url=img_url, timeout=IMG_DOWNLOAD_TIMEOUT)
+        r = requests.get(url=img_url, timeout=IMG_DOWNLOAD_TIMEOUT, headers=headers)
         head = r.content[:32]
         if head.startswith(b'\211PNG\r\n\032\n'):
             check = struct.unpack('>i', head[4:8])[0]
