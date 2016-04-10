@@ -1,3 +1,6 @@
+import binascii
+
+
 # Searching short title from readability implementation
 def normalize_entities(cur_title):
     entities = {
@@ -26,66 +29,79 @@ def normalize_spaces(s):
     return ' '.join(s.split())
 
 
+def remove_punctuation(s):
+    if not s:
+        return ''
+    return ''.join([l for l in s if l not in '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'])
+
+
 def norm_title(title):
-    return normalize_entities(normalize_spaces(title))
+    return normalize_spaces(remove_punctuation(normalize_entities(title)))
 
 
-def add_match(collection, text, orig):
-    text = norm_title(text)
-    if len(text.split()) >= 2 and len(text) >= 15:
-        if text.replace('"', '') in orig.replace('"', ''):
-            collection.add(text)
+def shinglify(clean_text):
+    """
+    Generates list of 'shingles': crc sums of word subsequences of default length
+    :param clean_text: cleaned text to calculate shingles sequence.
+    :return: shingles sequence
+    """
+    shingle_length = 3
+    result = []
+    for idx in range(len(clean_text) - shingle_length + 1):
+        result.append(
+            binascii.crc32(
+                bytes(
+                    u' '.join(
+                        [word for word in clean_text[idx:idx+shingle_length]]
+                    ),
+                    'utf-8'
+                )
+            )
+        )
+
+    return result
+
+
+def compare(initial, candidate):
+    """
+    Compares two shingles sequence and returns similarity value.
+    :param initial: initial sentence shingles sequence
+    :param candidate: compared sentence shingles sequence
+    :return: similarity value
+    """
+    matches = 0
+    for shingle in initial:
+        if shingle in candidate:
+            matches += 1
+
+    return matches * 2 / float(len(initial) + len(candidate)) * 100
 
 
 def shorten_title(doc):
+    """
+    Finding title
+    :param doc: full initial document
+    :return: found title title
+    """
 
-    # looking for tag containing itemprop='headline' first
-    headlines = doc.xpath("//h1[normalize-space(@itemprop)='headline']/text()")
-    if len(headlines) > 0:
-        return normalize_spaces(headlines[0])
-
-    # looking for tag containing itemprop='headline' first
-    headlines = doc.xpath("//*[normalize-space(@itemprop)='headline']/text()")
-    if len(headlines) > 0:
-        return normalize_spaces(headlines[0])
-
-    # looking for tag containing itemprop='name' if exists
-    names = doc.xpath("//*[normalize-space(@itemprop)='name']/text()")
-    if len(names) > 0:
-        return normalize_spaces(names[0])
-
-    # otherwise looking for og:title attribute
-    meta_titles = doc.xpath("//meta[normalize-space(@*)='og:title']/@content")
-    if len(meta_titles) > 0:
-        return normalize_spaces(meta_titles[0])
-
-    # if no attributes, then doing it the long way
     title = doc.find('.//title')
     if title is None or title.text is None or len(title.text) == 0:
         return ''
-    title = orig = norm_title(title.text)
 
-    candidates = set()
+    title = title.text.strip()
+    title_shingles = shinglify(norm_title(title))
 
-    for item in ['.//h1', './/h2', './/h3']:
-        for e in list(doc.iterfind(item)):
-            if e.text:
-                add_match(candidates, e.text, orig)
-            if e.text_content():
-                add_match(candidates, e.text_content(), orig)
+    candidates = {}
+    body = doc.xpath('//body')
+    if len(body) > 0:
 
-    for item in ['#title', '#head', '#heading', '.pageTitle', '.news_title',
-                 '.title', '.head', '.heading', '.contentheading', '.small_header_red']:
-        for e in doc.cssselect(item):
-            if e.text:
-                add_match(candidates, e.text, orig)
-            if e.text_content():
-                add_match(candidates, e.text_content(), orig)
+        for text in body[0].itertext():
+            candidate = text.strip()
+            if len(candidate) <= len(candidate):
+                similarity = compare(title_shingles, shinglify(norm_title(candidate)))
+                if similarity >= 50:
+                    candidates[candidate] = similarity
+    else:
+        return title
 
-    if candidates:
-        title = sorted(candidates, key=len)[-1]
-
-    if not 15 < len(title) < 150:
-        return orig
-
-    return title
+    return sorted(candidates.keys(), key=candidates.get, reverse=True)[0] if len(candidates) > 0 else title
