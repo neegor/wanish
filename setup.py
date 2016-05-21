@@ -18,7 +18,7 @@ setup(
     author_email="gorschal@gmail.com",
     description="open source implementation of summly",
     long_description=open("README.rst").read(),
-    license="Apache License 2.0",
+    license="MIT",
     url="https://github.com/reefeed/wanish",
     packages=['wanish'],
     keywords=[
