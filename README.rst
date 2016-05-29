@@ -76,4 +76,4 @@ Special Thanks
 -  https://github.com/buriy/python-readability
 -  https://github.com/saffsd/langid.py
 
-.. _DEMO: http://reefeed.com2.0
+.. _DEMO: http://reefeed.com
