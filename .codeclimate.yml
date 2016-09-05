@@ -1,0 +1,20 @@
+---
+engines:
+  pep8:
+    enabled: tru
+    checks:
+      E501:
+        enabled: false
+  duplication:
+    enabled: true
+    config:
+      languages:
+      - python
+  fixme:
+    enabled: true
+  radon:
+    enabled: true
+ratings:
+  paths:
+  - "**.py"
+exclude_paths: []
