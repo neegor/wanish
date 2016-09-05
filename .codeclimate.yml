@@ -12,11 +12,6 @@ engines:
       - python
   fixme:
     enabled: true
-    config:
-      strings:
-      - FIXME
-      - BUG
-      - CUSTOM
   radon:
     enabled: true
 ratings:
