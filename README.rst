@@ -1,3 +1,7 @@
+.. image:: https://codeclimate.com/github/reefeed/wanish/badges/gpa.svg
+   :target: https://codeclimate.com/github/reefeed/wanish
+   :alt: Code Climate
+
 About
 -----
 
