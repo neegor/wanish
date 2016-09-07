@@ -106,6 +106,7 @@ class Image(object):
         """
         detects format of the image and returns its width and height from meta
         :param img_url: url of the image
+        :param headers: extra headers for url requests if needed
         :return: image's width and height
         """
         width = -1

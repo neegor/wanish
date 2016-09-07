@@ -7,7 +7,9 @@ import snowballstemmer
 import networkx as nx
 
 from wanish import lang_identifier
-from wanish.tokenizers import PunktSentenceTokenizer, RegexpTokenizer
+
+from segtok.segmenter import split_multi
+from segtok.tokenizer import word_tokenizer
 
 LANG_CODES = {
     'da': 'danish',
@@ -37,15 +39,10 @@ def get_plain_text(cleaned_html_node, summary_sentences_qty):
     """
     clean_text = ""
 
-    # tokenizer for splitting text by sentences
-    sent_tokenizer = PunktSentenceTokenizer()
-
     # assembling text only with complete sentences, ended with respective punctuations.
     for node in cleaned_html_node.iter('p'):
-        if node.text is not None and len(node.text.strip(' \n\b\t')) > 0:
-            sentences = sent_tokenizer.tokenize(node.text)
-            for sentence in sentences:
-                sentence = sentence.strip(' \n\b\t')
+        if node.text is not None:
+            for sentence in split_multi(node.text):
                 if len(sentence) > 0 and sentence[-1:] in ['.', '!', '?', '…'] and \
                         not sentence.strip(' .!?…').isdigit():
                     clean_text = clean_text + ' ' + sentence
@@ -63,15 +60,15 @@ def similarity(s1, s2):
 
 
 def textrank(text, hdr):
-    sent_tokenizer = PunktSentenceTokenizer()
-    sentences = sent_tokenizer.tokenize(text)
-    word_tokenizer = RegexpTokenizer(r'\w+')
-
     # finding out the most possible language of the text
     lang_code = lang_identifier.classify(' '.join([hdr, text]))[0]
 
+    # tokenizing for words
+    sentences = [sentence for sentence in split_multi(text)]
+
     stemmer = snowballstemmer.stemmer(LANG_CODES.get(lang_code, 'english'))
-    words = [set(stemmer.stemWord(word) for word in word_tokenizer.tokenize(sentence.lower()))
+
+    words = [set(stemmer.stemWord(word) for word in word_tokenizer(sentence.lower()) if word.isalpha())
              for sentence in sentences]
 
     pairs = combinations(range(len(sentences)), 2)

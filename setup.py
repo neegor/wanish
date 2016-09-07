@@ -37,6 +37,7 @@ setup(
         "numpy",
         "snowballstemmer",
         "networkx",
+        "segtok",
         lxml_requirement
     ],
     classifiers=[
