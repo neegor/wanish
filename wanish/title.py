@@ -2,6 +2,9 @@ import binascii
 
 
 # Searching short title from readability implementation
+import re
+
+
 def normalize_entities(cur_title):
     entities = {
         '—': '-',
@@ -12,6 +15,7 @@ def normalize_entities(cur_title):
         '«': '"',
         '»': '"',
         '&quot;': '"',
+        '\xa0': ' ',
     }
     for c in entities:
         if c in cur_title:
@@ -81,7 +85,7 @@ def shorten_title(doc):
     """
     Finding title
     :param doc: full initial document
-    :return: found title title
+    :return: found title
     """
 
     title = doc.find('.//title')
@@ -104,4 +108,16 @@ def shorten_title(doc):
     else:
         return title
 
-    return sorted(candidates.keys(), key=candidates.get, reverse=True)[0] if len(candidates) > 0 else title
+    best_title = sorted(candidates.keys(), key=candidates.get, reverse=True)[0] if len(candidates) > 0 else title
+
+    # normalizing title and stripping starting/ending sequences of non-letter/non-digit symbols, dates
+    best_title = normalize_spaces(normalize_entities(best_title))
+
+    # TODO: improve leading dates/time stripping
+    best_title = re.sub(r'^\d{1,2}[\/.]\d{1,2}[\/.]\d{2,4}\s+', '', best_title)
+    best_title = re.sub(r'\d{1,2}[-:]\d{1,2}\d{0,2}\s+', '', best_title)
+
+    best_title = re.sub(r'^(\W+\s+)', '', best_title)
+    best_title = re.sub(r'(\s+\W+)$', '', best_title)
+
+    return best_title
