@@ -567,7 +567,6 @@ class ArticleExtractor(object):
         """
         return (weight < 25 and link_density > 0.2) or (weight >= 25 and link_density > 0.5)
 
-
     def check_if_allowed(self, element, allowed, to_remove):
         """
         Checks if this element should be allowed and not removed in future checks
@@ -610,8 +609,6 @@ class ArticleExtractor(object):
                     break
 
         return siblings
-
-
 
 single_quoted = "'[^']+'"
 double_quoted = '"[^"]+"'
