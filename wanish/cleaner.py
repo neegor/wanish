@@ -7,12 +7,16 @@ from lxml.html.clean import Cleaner
 
 
 REGEXES = {
-    'unlikelyCandidatesRe': re.compile('combx|comment|community|disqus|extra|foot|header|menu|remark|rss|shoutbox'
-                                       '|sidebar|sponsor|ad-break|agegate|pagination|pager|popup|tweet|twitter', re.I),
+    'unlikelyCandidatesRe': re.compile(
+            'combx|comment|community|disqus|extra|foot|header|menu|remark|rss|shoutbox'
+            '|sidebar|sponsor|ad-break|agegate|pagination|pager|popup|tweet|twitter|adblock', re.I
+        ),
     'okMaybeItsACandidateRe': re.compile('and|article|body|column|main|shadow', re.I),
     'positiveRe': re.compile('article|body|content|entry|hentry|main|page|pagination|post|text|blog|story', re.I),
-    'negativeRe': re.compile('combx|comment|com-|contact|foot|footer|footnote|masthead|media|meta|outbrain|promo'
-                             '|related|scroll|shoutbox|sidebar|sponsor|shopping|tags|tool|widget', re.I),
+    'negativeRe': re.compile(
+            'combx|comment|com-|contact|foot|footer|footnote|masthead|media|meta|outbrain|promo'
+            '|related|scroll|shoutbox|sidebar|sponsor|shopping|tags|tool|widget|adblock', re.I
+        ),
     'divToPElementsRe': re.compile('<(a|blockquote|dl|div|img|ol|p|pre|table|ul)', re.I),
 }
 
@@ -53,9 +57,8 @@ ESCAPED_ENTITIES = {
 
 class ArticleExtractor(object):
     """
-
+    Class for article extraction from web page by given URL
     """
-    # TODO: Compose description
 
     TEXT_LENGTH_THRESHOLD = 25  # threshold
     RETRY_LENGTH = 250
@@ -69,6 +72,7 @@ class ArticleExtractor(object):
         """
         Getting cleaned summary of the html article.
 
+        :param source_html: source HTML object
         :param html_partial: return only the div of the document, don't wrap in html and body tags.
         """
         if source_html is None:
@@ -81,68 +85,109 @@ class ArticleExtractor(object):
                 self._html = source_html  # reinitialization of current performing html
 
                 # narrowing the scope to articleBody, article or body tags.
-                article_body = self._html.xpath("//*[@itemprop='articleBody']")
-                articles = self._html.xpath("//article")
-                body = self._html.xpath("//body")
-                if len(article_body) > 0:
-                    self._html = article_body[0]
-                    html_partial = True
-                elif len(articles) > 0:
-                    self._html = articles[0]
-                    html_partial = True
-                elif len(body) > 0:
-                    self._html = body[0]
-                    html_partial = True
+                html_partial = self.narrow_scope(html_partial)
 
-                # cleaning useless tag subtrees
-                for i in self.tags(self._html, 'script', 'style'):
-                    i.drop_tree()
-                for i in self.tags(self._html, 'body'):
-                    i.set('id', 'readabilityBody')
-                if ruthless:
-                    self.remove_unlikely_candidates()
+                # get initial candidates
+                candidates = self.find_candidates(ruthless)
 
-                # transforms all <div> without another block elements into <p>
-                self.transform_misused_divs_into_paragraphs()
+                # raw possible article
+                article, ruthless, should_continue = self.get_possible_article(candidates, html_partial, ruthless)
 
-                # collecting candidate nodes scoring them by density and content length
-                candidates = self.score_paragraphs()
+                if should_continue is True:
+                    continue
 
-                # fetching the best candidate
-                best_candidate = self.select_best_candidate(candidates)
-
-                if best_candidate:
-                    # forming an article from the best candidate
-                    article = self.get_article(candidates, best_candidate,
-                                               html_partial=html_partial)
-                else:
-                    if ruthless:
-                        # too much was removed - doing a new iteration of performing without removal of unlikely nodes
-                        ruthless = False
-                        continue
-                    else:
-                        # second iteration failed - working with html as it is
-                        article = self._html.find('body')
-                        if article is None:
-                            article = self._html
                 cleaned_article = self.sanitize(article, candidates)
-                article_length = len(cleaned_article or '')
 
+                article_length = len(cleaned_article or '')
                 retry_length = self.RETRY_LENGTH
 
                 # check the resulting length, if too short, do a new iteration without removal of unlikely nodes
-                of_acceptable_length = article_length >= retry_length
-                if ruthless and not of_acceptable_length:
+                if ruthless and article_length < retry_length:
                     ruthless = False
                     continue
                 else:
                     return cleaned_article
+
         except Exception as e:
             # unable to summarize
             raise Unparseable(str(e))
 
         # not found
         return None
+
+    def find_candidates(self, ruthless):
+        """
+        Finds candidate nodes containing possible text articles.
+        :param ruthless: flag to remove candidates which are unlikely to contain correct article
+        :return: list of candidate nodes
+        """
+
+        # cleaning useless tag subtrees
+        for i in self.tags(self._html, 'script', 'style'):
+            i.drop_tree()
+        for i in self.tags(self._html, 'body'):
+            i.set('id', 'readabilityBody')
+
+        if ruthless:
+            self.remove_unlikely_candidates()
+
+        # transforms all <div> without another block elements into <p>
+        self.transform_misused_divs_into_paragraphs()
+
+        # collecting candidate nodes scoring them by density and content length
+        candidates = self.score_paragraphs()
+
+        return candidates
+
+    def narrow_scope(self, html_partial=False):
+        """
+        Narrows the scope of self._html to articleBody, article or body tags if present
+
+        :return:
+        """
+        if self._html is not None:
+            article_body = self._html.xpath("//*[@itemprop='articleBody']")
+            articles = self._html.xpath("//article")
+            body = self._html.xpath("//body")
+
+            for data in (article_body, articles, body):
+                if len(data) > 0:
+                    self._html = data[0]
+                    html_partial = True
+
+        return html_partial
+
+    def get_possible_article(self, candidates, html_partial, ruthless):
+        """
+        Tries to fetch an article among the given candidates
+        :param candidates:
+        :param html_partial:
+        :param ruthless:
+        :return:
+        """
+        should_continue = False
+        article = None
+
+        # fetching the best candidate
+        best_candidate = self.select_best_candidate(candidates)
+
+        if best_candidate:
+            # forming an article from the best candidate
+            article = self.get_article(candidates, best_candidate, html_partial=html_partial)
+        else:
+            if ruthless:
+                # too much was removed - doing a new iteration of performing without removal of unlikely nodes
+                ruthless = False
+                should_continue = True
+
+            else:
+                # second iteration failed - working with html as it is
+                article = self._html.find('body')
+
+                if article is None:
+                    article = self._html
+
+        return article, ruthless, should_continue
 
     @staticmethod
     def tags(node, *tag_names):
@@ -283,31 +328,42 @@ class ArticleExtractor(object):
     def class_weight(self, e):
         """
         Calculates weight of the node by its classes and ids. Negative words inside decrease it, positive increase.
-
         :param e: element to calculate class weight
         :return: calculated weight
         """
         weight = 0
-        for feature in [e.get('class', None), e.get('id', None)]:
+        for feature in (e.get('class', None), e.get('id', None)):
             if feature:
-                if REGEXES['negativeRe'].search(feature):
-                    weight -= 25
+                weight += self.check_regexes(feature)
+                weight += self.check_keywords(feature)
+        weight += self.check_keywords('tag-'+e.tag)
+        return weight
 
-                if REGEXES['positiveRe'].search(feature):
-                    weight += 25
-
-                if self._positive_keywords and self._positive_keywords.search(feature):
-                    weight += 25
-
-                if self._negative_keywords and self._negative_keywords.search(feature):
-                    weight -= 25
-
-        if self._positive_keywords and self._positive_keywords.match('tag-'+e.tag):
-            weight += 25
-
-        if self._negative_keywords and self._negative_keywords.match('tag-'+e.tag):
+    @staticmethod
+    def check_regexes(text=''):
+        """
+        Checks if text contains positive or negative parts from regexps and return its weight offset
+        :param text: text to perform
+        :return: weight offset
+        """
+        weight = 0
+        if REGEXES['negativeRe'].match(text):
             weight -= 25
+        if REGEXES['positiveRe'].match(text):
+            weight += 25
+        return weight
 
+    def check_keywords(self, text=''):
+        """
+        Checks if text contains positive or negative keyword parts and return its weight offset
+        :param text: text to perform
+        :return: weight offset
+        """
+        weight = 0
+        if self._positive_keywords and self._positive_keywords.match(text):
+            weight += 25
+        if self._negative_keywords and self._negative_keywords.match(text):
+            weight -= 25
         return weight
 
     @staticmethod
@@ -354,28 +410,13 @@ class ArticleExtractor(object):
             best_candidate['content_score'] * 0.2])
 
         # create a new html document with a html->body->div
-        if html_partial:
-            output = fragment_fromstring('<div/>')
-        else:
-            output = document_fromstring('<div/>')
+        output = self.initial_output(html_partial)
         best_elem = best_candidate['elem']
+
         for sibling in best_elem.getparent().getchildren():
-            append = False
-            if sibling is best_elem:
-                append = True
-            sibling_key = sibling  # HashableElement(sibling)
-            if sibling_key in candidates and candidates[sibling_key]['content_score'] >= sibling_score_threshold:
-                append = True
-
-            if sibling.tag == "p":
-                link_density = self.get_link_density(sibling)
-                node_content = sibling.text or ""
-                node_length = len(node_content)
-
-                if node_length > 80 and link_density < 0.25:
-                    append = True
-                elif node_length <= 80 and link_density == 0 and re.search('\.( |$)', node_content):
-                    append = True
+            append = True if sibling is best_elem else self.is_appendable(sibling,
+                                                                          candidates,
+                                                                          sibling_score_threshold)
 
             if append:
                 # We don't want to append directly to output, but the div in html->body->div
@@ -386,6 +427,42 @@ class ArticleExtractor(object):
 
         return output
 
+    @staticmethod
+    def initial_output(html_partial=False):
+        """
+        Creates initial HTML document according to the given flag
+        :param html_partial: determines if there should be the html page or only a fragment
+        :return: html output element
+        """
+        return fragment_fromstring('<div/>') if html_partial else document_fromstring('<div/>')
+
+    def is_appendable(self, sibling, candidates, sibling_score_threshold):
+        """
+        Finds out if this sibling element should be appended to the output
+        :param sibling: element to perform
+        :param candidates: list of candidate elements
+        :param sibling_score_threshold: threshlod of the score
+        :return: boolean flag
+        """
+        append = False
+
+        sibling_key = sibling  # HashableElement(sibling)
+
+        if sibling_key in candidates and candidates[sibling_key]['content_score'] >= sibling_score_threshold:
+            append = True
+
+        if sibling.tag == "p":
+            link_density = self.get_link_density(sibling)
+            node_content = sibling.text or ""
+            node_length = len(node_content)
+
+            if node_length > 80 and link_density < 0.25:
+                append = True
+            elif node_length <= 80 and link_density == 0 and re.search('\.( |$)', node_content):
+                append = True
+
+        return append
+
     def sanitize(self, node, candidates):
         """
         Sanitizing html node by different criteria.
@@ -394,7 +471,7 @@ class ArticleExtractor(object):
         :param candidates: list of node candidates
         :return: cleaned html fragment, containing base tags without attributes
         """
-        min_len = self.TEXT_LENGTH_THRESHOLD
+
         for header in self.tags(node, "h1", "h2", "h3", "h4", "h5", "h6"):
             if self.class_weight(header) < 0 or self.get_link_density(header) > 0.33:
                 header.drop_tree()
@@ -412,64 +489,11 @@ class ArticleExtractor(object):
                 content_score = candidates[el]['content_score']
             else:
                 content_score = 0
-            tag = el.tag
 
             if weight + content_score < 0:
                 el.drop_tree()
             elif el.text_content().count(",") < 10:
-                counts = {}
-                for kind in ['p', 'img', 'li', 'a', 'embed', 'input']:
-                    counts[kind] = len(el.findall('.//%s' % kind))
-                counts["li"] -= 100
-                counts["input"] -= len(el.findall('.//input[@type="hidden"]'))
-
-                # Count the text length excluding any surrounding whitespace
-                content_length = text_length(el)
-                link_density = self.get_link_density(el)
-                to_remove = False
-
-                if counts["p"] and counts["img"] > counts["p"]:
-                    to_remove = True
-                elif counts["li"] > counts["p"] and tag != "ul" and tag != "ol":
-                    to_remove = True
-                elif counts["input"] > (counts["p"] / 3):
-                    to_remove = True
-                elif content_length < min_len and (counts["img"] == 0 or counts["img"] > 2):
-                    to_remove = True
-                elif weight < 25 and link_density > 0.2:
-                        to_remove = True
-                elif weight >= 25 and link_density > 0.5:
-                    to_remove = True
-                elif (counts["embed"] == 1 and content_length < 75) or counts["embed"] > 1:
-                    to_remove = True
-
-                    # find x non empty preceding and succeeding siblings
-                    i, j = 0, 0
-                    x = 1
-                    siblings = []
-                    for sib in el.itersiblings():
-                        sib_content_length = text_length(sib)
-                        if sib_content_length:
-                            i += 1
-                            siblings.append(sib_content_length)
-                            if i == x:
-                                break
-
-                    for sib in el.itersiblings(preceding=True):
-                        sib_content_length = text_length(sib)
-                        if sib_content_length:
-                            j += 1
-                            siblings.append(sib_content_length)
-                            if j == x:
-                                break
-
-                    if siblings and sum(siblings) > 1000:
-                        to_remove = False
-                        for desnode in self.tags(el, "table", "ul", "div"):
-                            allowed[desnode] = True
-
-                if to_remove:
-                    el.drop_tree()
+                self.remove_unnecessary_element(el, weight, allowed)
 
         self._html = node
 
@@ -484,6 +508,109 @@ class ArticleExtractor(object):
         #         child.clear()
 
         return clean_attributes(etree.tostring(self._html).decode())
+
+    def remove_unnecessary_element(self, element, weight, allowed):
+        """
+        Removes insignificant element trees
+
+        :param element: element to perform
+        :param weight: weight of a given node
+        :param allowed: list of elements which are allowed and will be not removed in future
+        :return:
+        """
+
+        min_len = self.TEXT_LENGTH_THRESHOLD
+        tag = element.tag
+
+        counts = {}
+        for kind in ['p', 'img', 'li', 'a', 'embed', 'input']:
+            counts[kind] = len(element.findall('.//%s' % kind))
+        counts["li"] -= 100
+        counts["input"] -= len(element.findall('.//input[@type="hidden"]'))
+
+        # Count the text length excluding any surrounding whitespace
+        content_length = text_length(element)
+        link_density = self.get_link_density(element)
+        to_remove = False
+
+        if any([
+            self.counts_conditions(counts),
+            self.density_conditions(weight, link_density),
+            counts["li"] > counts["p"] and tag != "ul" and tag != "ol",
+            content_length < min_len and (counts["img"] == 0 or counts["img"] > 2),
+            (counts["embed"] == 1 and content_length < 75) or counts["embed"] > 1,
+        ]) is True:
+            to_remove = True
+
+        to_remove = self.check_if_allowed(element, allowed, to_remove)
+
+        if to_remove:
+            element.drop_tree()
+
+    @staticmethod
+    def counts_conditions(counts):
+        """
+        Evaluates conditions about counts of elements
+        :param counts: dict of tags counts
+        :return: flag if conditions are True or False
+        """
+        return (counts["p"] and counts["img"] > counts["p"]) or \
+               (counts["input"] > (counts["p"] / 3))
+
+    @staticmethod
+    def density_conditions(weight=0, link_density=0.0):
+        """
+        Evaluates conditions about density of links
+        :param weight: tag's weight
+        :param link_density: link density indicator
+        :return: flag if conditions are True or False
+        """
+        return (weight < 25 and link_density > 0.2) or (weight >= 25 and link_density > 0.5)
+
+
+    def check_if_allowed(self, element, allowed, to_remove):
+        """
+        Checks if this element should be allowed and not removed in future checks
+        :param element: element to perform
+        :param allowed: list of allowed elements
+        :param to_remove: flag to set the element for removal
+        :return:
+        """
+
+        # find x non empty preceding and succeeding siblings
+        siblings = []
+        siblings.extend(self.get_siblings_content_lengths(element, how_many=1))
+        siblings.extend(self.get_siblings_content_lengths(element, preceding=True, how_many=1))
+
+        if siblings and sum(siblings) > 1000:
+            to_remove = False
+            for desnode in self.tags(element, "table", "ul", "div"):
+                allowed[desnode] = True
+
+        return to_remove
+
+    @staticmethod
+    def get_siblings_content_lengths(element, preceding=False, how_many=1):
+        """
+        Returns a list of siblings content length
+
+        :param element: element to perform
+        :param preceding: flag describing should we do that for preceding or succeeding siblings
+        :param how_many: amount of siblings to return
+        :return:
+        """
+        siblings = []
+        ctr = 0
+        for sib in element.itersiblings(preceding=preceding):
+            sib_content_length = text_length(sib)
+            if sib_content_length:
+                ctr += 1
+                siblings.append(sib_content_length)
+                if ctr == how_many:
+                    break
+
+        return siblings
+
 
 
 single_quoted = "'[^']+'"

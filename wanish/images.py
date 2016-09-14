@@ -81,7 +81,8 @@ class Image(object):
             dim_ratio = self.width / self.height if self.width > self.height else self.height / self.width
             return dim_ratio > MAX_DIMENSION_RATIO
 
-    def absolute_url(self, image_url, source_url):
+    @staticmethod
+    def absolute_url(image_url, source_url):
         """
         makes image path absolute if it is relative
         :param image_url: url of an image
@@ -102,7 +103,8 @@ class Image(object):
             return image_url
 
     # http://stackoverflow.com/questions/8032642/how-to-obtain-image-size-using-standard-python-class-without-using-external-lib
-    def fetch_image_dimensions(self, img_url, headers=None):
+    @staticmethod
+    def fetch_image_dimensions(img_url, headers=None):
         """
         detects format of the image and returns its width and height from meta
         :param img_url: url of the image

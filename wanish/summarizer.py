@@ -5,6 +5,7 @@ from itertools import combinations
 
 import snowballstemmer
 import networkx as nx
+import re
 
 from wanish import lang_identifier
 
@@ -28,6 +29,8 @@ LANG_CODES = {
     'tr': 'turkish',
 }
 
+# regexp to strip off dialog sentences
+dialog_re = re.compile("^\s*[-—]\s*", re.U)
 
 def get_plain_text(cleaned_html_node, summary_sentences_qty):
     """
@@ -44,7 +47,7 @@ def get_plain_text(cleaned_html_node, summary_sentences_qty):
         if node.text is not None:
             for sentence in split_multi(node.text):
                 if len(sentence) > 0 and sentence[-1:] in ['.', '!', '?', '…'] and \
-                        not sentence.strip(' .!?…').isdigit():
+                        not sentence.strip(' .!?…').isdigit() and not dialog_re.match(sentence):
                     clean_text = clean_text + ' ' + sentence
 
     # creating summary, obtaining language code and total sentences quantity

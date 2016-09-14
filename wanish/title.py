@@ -113,8 +113,8 @@ def shorten_title(doc):
     # normalizing title and stripping starting/ending sequences of non-letter/non-digit symbols, dates
     best_title = normalize_spaces(normalize_entities(best_title))
 
-    # TODO: improve leading dates/time stripping
-    best_title = re.sub(r'^\d{1,2}[\/.]\d{1,2}[\/.]\d{2,4}\s+', '', best_title)
+    # improve leading dates/time stripping
+    best_title = re.sub(r'^\d{1,2}[/.]\d{1,2}[/.]\d{2,4}\s+', '', best_title)
     best_title = re.sub(r'^\d{1,2}[-:]\d{1,2}\d{0,2}\s+', '', best_title)
 
     best_title = re.sub(r'^(\W+\s+)', '', best_title)
