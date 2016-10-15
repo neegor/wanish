@@ -4,18 +4,17 @@ import requests
 from requests.exceptions import ConnectionError, Timeout
 from lxml.html import fromstring
 
-from wanish.cleaner import html_cleaner, ArticleExtractor, clean_entities
+from wanish.cleaner import html_cleaner, ArticleExtractor, clean_entities, describe
 from wanish.encoding import get_encodings
 from wanish.images import get_image_url
 from wanish.title import shorten_title
+from wanish.summarizer import get_plain_text
 
 import chardet
 
 # Initialization of lang analyzer. Takes some time.
 from wanish.langid import LanguageIdentifier, model
 lang_identifier = LanguageIdentifier.from_modelstring(model)
-
-from wanish.summarizer import get_plain_text
 
 
 # Template of the resulting article
@@ -146,19 +145,21 @@ class Wanish(object):
                 return
 
         if self._source_html is not None:
+
+            # clean html of the article and its starting node
+            self.clean_html, starting_node = self._article_extractor.get_clean_html(source_html=self._source_html)
+
             # obtaining title
-            self.title = clean_entities(shorten_title(self._source_html))
+            short_title, title_node = shorten_title(self._source_html, starting_node)
+            self.title = clean_entities(short_title)
 
             # obtaining image url
-            self.image_url = get_image_url(self._source_html, self.url, self._headers)
+            self.image_url = get_image_url(self._source_html, self.url, self._headers, starting_node, title_node)
             if self.image_url is not None:
                 image_url_node = "<meta itemprop=\"image\" content=\"%s\">" % self.image_url
                 image_url_img = "<img src=\"%s\" />" % self.image_url
             else:
                 image_url_node = image_url_img = ""
-
-            # clean html
-            self.clean_html = self._article_extractor.get_clean_html(source_html=self._source_html)
 
             # summarized description, requires clean_html
             if self.clean_html:

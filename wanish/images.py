@@ -12,12 +12,16 @@ MAX_DIMENSION_RATIO = 3  # maximum ratio of dimensions, if higher - we consider 
 
 # TODO: fill it with more data, getting only good JPG/PNG images
 IGNORE_PATH_REGULAR = re.compile(
-    ".gif|.ico|twitter.jpg|share|social|logo|/ads.|/ads/|button"
+    r".gif|.ico|twitter.jpg|share|social|logo|/ads.|/ads/|button"
 )
 
 # TODO: fill it with more data, getting only good JPG/PNG images
 GOOD_PATH_REGULAR = re.compile(
-    ".jpg|.jpeg|.png"
+    r".jpg|.jpeg|.png"
+)
+
+IMAGE_URL_FROM_STRING_REGULAR = re.compile(
+    r"(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%:/~+#-]*(.jpg|.jpeg|.png))?"
 )
 
 IMG_DOWNLOAD_TIMEOUT = 5  # sec
@@ -41,8 +45,7 @@ class Image(object):
         :param headers: extra headers to request for images' data
         """
 
-        self.url = self.absolute_url(img_node.get('src'), html_url)
-
+        self.url = self.deparameterize_url(self.absolute_url(img_node.get('src'), html_url))
         if self.url is not None:
 
             path = urlparse(self.url).path
@@ -80,6 +83,26 @@ class Image(object):
         else:
             dim_ratio = self.width / self.height if self.width > self.height else self.height / self.width
             return dim_ratio > MAX_DIMENSION_RATIO
+
+    @staticmethod
+    def deparameterize_url(image_url):
+        """
+        checks if real image url is a parameter given to some page
+        :param image_url: initial url
+        :return: resulting url
+        """
+        try:
+            parsed_img = urlparse(image_url)
+            if parsed_img.path.endswith(('.jpg', 'jpeg', 'png',)):
+                return image_url
+
+            match = IMAGE_URL_FROM_STRING_REGULAR.search(parsed_img.query)
+            if match is not None:
+                return match.group()
+        except TypeError:
+            pass
+
+        return image_url
 
     @staticmethod
     def absolute_url(image_url, source_url):
@@ -142,7 +165,7 @@ class Image(object):
                     height, width = struct.unpack('>HH', fhandle.read(4))
                 except Exception:  # IGNORE:W0703
                     return width, height
-        except (Timeout, TypeError):
+        except (Timeout, TypeError, ConnectionError):
             pass
         return width, height
 
@@ -157,7 +180,25 @@ class Image(object):
         ))
 
 
-def get_image_url(html, source_url=None, headers=None):
+def get_image_container_node(html=None, article=None, title=None):
+    """
+    Returns first enveloping parent node for given title node
+    :param html: page element
+    :param article: element containing article
+    :param title: element containing title
+    :return:
+    """
+
+    if article is not None and title is not None:
+        article_parents = [ap for ap in article.iterancestors()]
+
+        for tp in title.iterancestors():
+            if tp in article_parents:
+                return tp
+    return html
+
+
+def get_image_url(html, source_url=None, headers=None, article_element=None, title_element=None):
     """
     gets article picture's url
 
@@ -171,11 +212,16 @@ def get_image_url(html, source_url=None, headers=None):
     :param html: html page element
     :param source_url: url of the source html page, used for normalization of img links
     :param headers: headers to send when detecting dimensions of images
+    :param article_element: detected article element to improve image detection
+    :param title_element: detected title element to improve image detection
     :return: url of the image
     """
 
+    # Get container element of a title: usually the article-related images are in the same block with title and article
+    container_node = get_image_container_node(html, article_element, title_element)
+
     # Get all img urls
-    image_nodes = html.xpath("//img")
+    image_nodes = container_node.xpath(".//img")
 
     candidates_list = list()
 

@@ -5,6 +5,7 @@ from lxml.html import document_fromstring, fragment_fromstring
 from lxml import etree
 from lxml.html.clean import Cleaner
 
+from copy import deepcopy
 
 REGEXES = {
     'unlikelyCandidatesRe': re.compile(
@@ -70,13 +71,13 @@ class ArticleExtractor(object):
 
     def get_clean_html(self, source_html=None, html_partial=False):
         """
-        Getting cleaned summary of the html article.
+        Getting cleaned summary of the html article and its node.
 
         :param source_html: source HTML object
         :param html_partial: return only the div of the document, don't wrap in html and body tags.
         """
         if source_html is None:
-            return None
+            return None, None
 
         try:
             ruthless = True  # flag to remove unworthy candidates
@@ -91,7 +92,9 @@ class ArticleExtractor(object):
                 candidates = self.find_candidates(ruthless)
 
                 # raw possible article
-                article, ruthless, should_continue = self.get_possible_article(candidates, html_partial, ruthless)
+                article, ruthless, should_continue, first_node = self.get_possible_article(
+                    candidates, html_partial, ruthless
+                )
 
                 if should_continue is True:
                     continue
@@ -106,14 +109,14 @@ class ArticleExtractor(object):
                     ruthless = False
                     continue
                 else:
-                    return cleaned_article
+                    return cleaned_article, first_node
 
         except Exception as e:
             # unable to summarize
             raise Unparseable(str(e))
 
         # not found
-        return None
+        return None, None
 
     def find_candidates(self, ruthless):
         """
@@ -167,13 +170,14 @@ class ArticleExtractor(object):
         """
         should_continue = False
         article = None
+        first_node = None
 
         # fetching the best candidate
         best_candidate = self.select_best_candidate(candidates)
 
         if best_candidate:
             # forming an article from the best candidate
-            article = self.get_article(candidates, best_candidate, html_partial=html_partial)
+            article, first_node = self.get_article(candidates, best_candidate, html_partial=html_partial)
         else:
             if ruthless:
                 # too much was removed - doing a new iteration of performing without removal of unlikely nodes
@@ -187,7 +191,7 @@ class ArticleExtractor(object):
                 if article is None:
                     article = self._html
 
-        return article, ruthless, should_continue
+        return article, ruthless, should_continue, first_node
 
     @staticmethod
     def tags(node, *tag_names):
@@ -412,6 +416,7 @@ class ArticleExtractor(object):
         # create a new html document with a html->body->div
         output = self.initial_output(html_partial)
         best_elem = best_candidate['elem']
+        first_appended_element = None
 
         for sibling in best_elem.getparent().getchildren():
             append = True if sibling is best_elem else self.is_appendable(sibling,
@@ -419,13 +424,16 @@ class ArticleExtractor(object):
                                                                           sibling_score_threshold)
 
             if append:
+                if first_appended_element is None:
+                    first_appended_element = sibling
+
                 # We don't want to append directly to output, but the div in html->body->div
                 if html_partial:
-                    output.append(sibling)
+                    output.append(deepcopy(sibling))
                 else:
-                    output.getchildren()[0].getchildren()[0].append(sibling)
+                    output.getchildren()[0].getchildren()[0].append(deepcopy(sibling))
 
-        return output
+        return output, first_appended_element
 
     @staticmethod
     def initial_output(html_partial=False):
