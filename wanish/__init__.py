@@ -8,7 +8,6 @@ from wanish.cleaner import html_cleaner, ArticleExtractor, clean_entities, descr
 from wanish.encoding import get_encodings
 from wanish.images import get_image_url
 from wanish.title import shorten_title
-from wanish.summarizer import get_plain_text
 
 import chardet
 
@@ -16,6 +15,7 @@ import chardet
 from wanish.langid import LanguageIdentifier, model
 lang_identifier = LanguageIdentifier.from_modelstring(model)
 
+from wanish.summarizer import get_plain_text
 
 # Template of the resulting article
 ARTICLE_TEMPLATE = """<!DOCTYPE html>
