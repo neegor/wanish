@@ -45,7 +45,9 @@ class Image(object):
         :param headers: extra headers to request for images' data
         """
 
-        self.url = self.deparameterize_url(self.absolute_url(img_node.get('src'), html_url))
+        # getting url of the given img node
+        self.url = self.get_image_url_from_node(img_node, html_url)
+
         if self.url is not None:
 
             path = urlparse(self.url).path
@@ -84,19 +86,17 @@ class Image(object):
             dim_ratio = self.width / self.height if self.width > self.height else self.height / self.width
             return dim_ratio > MAX_DIMENSION_RATIO
 
-    @staticmethod
-    def deparameterize_url(image_url):
+    def deparameterize_url(self, image_url):
         """
         checks if real image url is a parameter given to some page
         :param image_url: initial url
         :return: resulting url
         """
         try:
-            parsed_img = urlparse(image_url)
-            if parsed_img.path.endswith(('.jpg', 'jpeg', 'png',)):
+            if self.validate_img_url(image_url) is True:
                 return image_url
 
-            match = IMAGE_URL_FROM_STRING_REGULAR.search(parsed_img.query)
+            match = IMAGE_URL_FROM_STRING_REGULAR.search(urlparse(image_url).query)
             if match is not None:
                 return match.group()
         except TypeError:
@@ -114,16 +114,18 @@ class Image(object):
         """
         if image_url is None:
             return None
+        try:
+            parsed_img = urlparse(image_url)
 
-        parsed_img = urlparse(image_url)
-
-        if parsed_img.hostname is None:
-            if source_url is None:
-                return None
+            if parsed_img.hostname is None:
+                if source_url is None:
+                    return None
+                else:
+                    return urljoin(source_url, image_url)
             else:
-                return urljoin(source_url, image_url)
-        else:
-            return image_url
+                return image_url
+        except TypeError:
+            return None
 
     # http://stackoverflow.com/questions/8032642/how-to-obtain-image-size-using-standard-python-class-without-using-external-lib
     @staticmethod
@@ -168,6 +170,54 @@ class Image(object):
         except (Timeout, TypeError, ConnectionError):
             pass
         return width, height
+
+    def get_image_url_from_node(self, img_node, source_url, min_srcset_res=600):
+
+        # checking adaptive 'srcset' attribute
+        srcset = img_node.get('srcset')
+        if srcset is not None:
+            first_good_url = None
+            for entry in srcset.split(','):
+                entry = entry.strip()
+                try:
+                    data = entry.split()
+                    url = data[0]
+                    res = int(re.sub("\D", "", data[1]))
+                    url = self.absolute_url(url, source_url)
+                    if self.validate_img_url(url) is True:
+                        if res >= min_srcset_res:
+                            return url
+                        if first_good_url is None:
+                            first_good_url = url
+                except IndexError as e:
+                    pass
+
+            if first_good_url is not None:
+                return first_good_url
+
+        # checking src attribute
+        img_url = img_node.get('src')
+        if img_url is not None:
+            img_url = self.absolute_url(img_url, source_url)
+            if self.validate_img_url(img_url) is True:
+                return img_url
+
+        # checking all 'data*' attributes
+        for key, value in img_node.attrib.items():
+            if key.startswith('data'):
+                img_url = self.absolute_url(value, source_url)
+                if self.validate_img_url(img_url) is True:
+                    return self.deparameterize_url(img_url)
+
+        return None
+
+    @staticmethod
+    def validate_img_url(url):
+        try:
+            parsed = urlparse(url)
+            return parsed.path.endswith(('.jpg', 'jpeg', 'png',))
+        except TypeError:
+            return False
 
     def __str__(self):
         # TODO: for debug purposes,. remove it later

@@ -171,6 +171,7 @@ class Wanish(object):
                     # Replacing \xc2\xa0 and \xa0 in result with space
                     self.description = self.description.replace(u'\xc2\xa0', u' ').replace(u'\xa0', u' ')
                     self.description = clean_entities(self.description)
+                    self.description = ' '.join(self.description.split())
                     description_node = "<meta name=\"description\" content=\"%s\">" if self.description else ""
 
                 # filling the template

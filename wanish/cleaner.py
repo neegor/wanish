@@ -85,6 +85,8 @@ class ArticleExtractor(object):
             while True:
                 self._html = source_html  # reinitialization of current performing html
 
+                self.clean_definitely_useless_nodes()  # cleaning unneeded data
+
                 # narrowing the scope to articleBody, article or body tags.
                 html_partial = self.narrow_scope(html_partial)
 
@@ -617,6 +619,18 @@ class ArticleExtractor(object):
                     break
 
         return siblings
+
+    def clean_definitely_useless_nodes(self):
+        """
+        Removes nodes which do not contain useful information
+        """
+        useless_nodes = self._html.xpath(
+            '//*[re:test(@class, "comment|komment|modal|adblock")]',
+            namespaces={'re': "http://exslt.org/regular-expressions"}
+        )
+        for un in useless_nodes:
+            un.drop_tree()
+
 
 single_quoted = "'[^']+'"
 double_quoted = '"[^"]+"'
