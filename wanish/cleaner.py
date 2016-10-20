@@ -426,7 +426,7 @@ class ArticleExtractor(object):
                                                                           sibling_score_threshold)
 
             if append:
-                if first_appended_element is None:
+                if first_appended_element is None and sibling.text is not None and len(clean(sibling.text)) >= 5:
                     first_appended_element = sibling
 
                 # We don't want to append directly to output, but the div in html->body->div

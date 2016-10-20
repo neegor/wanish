@@ -32,6 +32,7 @@ LANG_CODES = {
 # regexp to strip off dialog sentences
 dialog_re = re.compile("^\s*[-—]\s*", re.U)
 
+
 def get_plain_text(cleaned_html_node, summary_sentences_qty):
     """
     Summarizes text from html element.
