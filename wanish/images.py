@@ -5,8 +5,8 @@ from requests.exceptions import Timeout
 import struct
 from io import BytesIO
 
-MIN_IMAGE_WIDTH = 400  # px
-MIN_IMAGE_HEIGHT = 225  # px
+MIN_IMAGE_WIDTH = 600  # px
+MIN_IMAGE_HEIGHT = 300  # px
 
 MAX_DIMENSION_RATIO = 3  # maximum ratio of dimensions, if higher - we consider it a banner
 
