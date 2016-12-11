@@ -12,7 +12,7 @@ MAX_DIMENSION_RATIO = 3  # maximum ratio of dimensions, if higher - we consider 
 
 # TODO: fill it with more data, getting only good JPG/PNG images
 IGNORE_PATH_REGULAR = re.compile(
-    r".gif|.ico|twitter.jpg|share|social|logo|/ads.|/ads/|button"
+    r".gif|.ico|twitter.jpg|share|social|logo|/ads.|/ads/|button|notification"
 )
 
 # TODO: fill it with more data, getting only good JPG/PNG images

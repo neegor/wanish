@@ -10,7 +10,7 @@ from copy import deepcopy
 REGEXES = {
     'unlikelyCandidatesRe': re.compile(
             'combx|comment|community|disqus|extra|foot|header|menu|remark|rss|shoutbox'
-            '|sidebar|sponsor|ad-break|agegate|pagination|pager|popup|tweet|twitter|adblock', re.I
+            '|sidebar|sponsor|ad-break|agegate|pagination|pager|popup|tweet|twitter|adblock|footer', re.I
         ),
     'okMaybeItsACandidateRe': re.compile('and|article|body|column|main|shadow', re.I),
     'positiveRe': re.compile('article|body|content|entry|hentry|main|page|pagination|post|text|blog|story', re.I),
@@ -18,7 +18,7 @@ REGEXES = {
             'combx|comment|com-|contact|foot|footer|footnote|masthead|media|meta|outbrain|promo'
             '|related|scroll|shoutbox|sidebar|sponsor|shopping|tags|tool|widget|adblock', re.I
         ),
-    'divToPElementsRe': re.compile('<(a|blockquote|dl|div|img|ol|p|pre|table|ul)', re.I),
+    'divToPElementsRe': re.compile('<(a|blockquote|dl|div|img|ol|p|pre|table|ul|footer)', re.I),
 }
 
 ESCAPED_ENTITIES = {
@@ -625,7 +625,7 @@ class ArticleExtractor(object):
         Removes nodes which do not contain useful information
         """
         useless_nodes = self._html.xpath(
-            '//*[re:test(@class, "comment|komment|modal|adblock")]',
+            '//*[re:test(@class, "comment|komment|modal|adblock|bottom_info")]',
             namespaces={'re': "http://exslt.org/regular-expressions"}
         )
         for un in useless_nodes:
